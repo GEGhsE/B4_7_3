@@ -1,1 +1,2888 @@
+<!DOCTYPE html>
+<html lang="ko">
 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>리코더 점프</title>
+
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* =============================================
+       리코더 점프 — 연습실
+       디자인: 여름 바다 테마
+       ============================================= */
+
+    :root {
+      --main:       #FF9F1C;   /* 선셋 오렌지 — 주요 버튼 */
+      --orange:     #FFBA5C;   /* 해변 모래 */
+      --yellow:     #E0F7FF;   /* 연한 하늘 — 안내 박스 */
+      --blue:       #ADE8F4;   /* 얕은 파도색 */
+      --bg:         #E8F6FF;   /* 페이지 배경 — 하늘빛 */
+      --binder-bg:  #FFFFFF;
+      --border:     #0077B6;   /* 깊은 바다 — 메인 포인트 */
+      --dark:       #03294F;   /* 심해 네이비 — 텍스트 */
+      --radius:     35px;
+      --btn-blue:       #ADE8F4;
+      --btn-blue-border:#48CAE4;
+
+      /* 탭 색상 */
+      --tab-practice: #FFE5B4;  /* 해변 모래 */
+      --tab-history:  #CAF0F8;  /* 얕은 파도 */
+      --tab-mission:  #FFD6A5;  /* 노을/산호 */
+      --tab-badges:   #BAE6FD;  /* 하늘 바다 */
+      --tab-stats:    #C0DFFF;  /* 연한 대양 */
+      --tab-mastery:  #90E0EF;  /* 맑은 물빛 */
+
+      /* 기능 색상 */
+      --correct: #A7F3D0;
+      --wrong:   #FECACA;
+      --hint:    #FEF3C7;
+
+      /* 텍스트 */
+      --text-dark:  #03294F;
+      --text-mid:   #1A5C8C;
+      --text-light: #4A90C4;
+
+      /* 반경/그림자 */
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --shadow-paper: 0 2px 12px rgba(0, 119, 182, 0.12);
+
+      /* 타이포그래피 */
+      --t1: 2.6rem;
+      --t2: 1.7rem;
+      --t3: 1.25rem;
+      --t4: 1rem;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg);
+    }
+    body {
+      font-family: 'Jua', sans-serif;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      font-size: 25px;
+    }
+
+    /* ===== BINDER WRAPPER ===== */
+    #scale-wrapper {
+      width: 1180px;
+      height: 870px;
+      transform-origin: top center;
+      padding: 0;
+    }
+
+    .binder-wrapper {
+      position: relative;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    .binder-container {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+    }
+
+    .binder-frame {
+      flex: 1;
+      min-height: 868px;
+      max-height: 870px;
+      background: var(--binder-bg);
+      border: 4px solid var(--border);
+      border-radius: var(--radius);
+      position: relative;
+      z-index: 2;
+      box-shadow: 10px 12px 0px rgba(0, 119, 182, 0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .binder-header {
+      padding: 6px 14px;
+      border-bottom: 3px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .grade-badge {
+      background: #fdfdfd;
+      padding: 8px 18px;
+      border-radius: 25px;
+      font-size: var(--t3);
+      border: 3px solid var(--border);
+      box-shadow: 0 3px 0 var(--border);
+      font-weight: 800;
+      color: var(--dark);
+      white-space: nowrap;
+    }
+
+    @keyframes rotatePulse {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      50%       { transform: rotate(-90deg) scale(1.15); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    @keyframes badgePop {
+      0%   { opacity:0; transform:scale(0.5) rotate(-8deg); }
+      70%  { transform:scale(1.08) rotate(2deg); }
+      100% { opacity:1; transform:scale(1) rotate(0deg); }
+    }
+
+    @keyframes confettiFall {
+      0%   { transform:translateY(-20px) rotate(0deg); opacity:1; }
+      100% { transform:translateY(300px) rotate(720deg); opacity:0; }
+    }
+
+    .shake-error {
+      animation: shake 0.4s ease-in-out;
+      border-color: #FF8787 !important;
+      box-shadow: 0 0 10px rgba(255, 135, 135, 0.4) !important;
+    }
+
+    /* ===== 커스텀 토스트 알림 ===== */
+    .toast-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 18px 32px;
+      border-radius: 50px;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.3rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+    }
+
+    .toast.show { opacity: 1; transform: scale(1); }
+    .toast.error { border-left: 6px solid #FF8787; }
+    .toast.success { border-left: 6px solid #51CF66; }
+    .toast-icon { font-size: 1.5rem; }
+
+    .binder-title {
+      font-family: 'Jua', sans-serif;
+      font-size: var(--t1);
+      color: var(--border);
+      letter-spacing: -1px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .user-chip {
+      background: var(--yellow);
+      border: 3px solid var(--orange);
+      color: var(--dark);
+      border-radius: 25px;
+      padding: 8px 18px;
+      font-size: var(--t3);
+      font-family: 'Jua', sans-serif;
+      box-shadow: 0 3px 0 var(--orange);
+      white-space: nowrap;
+    }
+
+    .logout-btn {
+      background: #F0FDFA;
+      border: 3px solid var(--border);
+      color: var(--border);
+      padding: 8px 16px;
+      border-radius: 25px;
+      font-size: var(--t3);
+      cursor: pointer;
+      font-family: 'Jua', sans-serif;
+      transition: all 0.2s;
+      box-shadow: 0 3px 0 var(--border);
+      white-space: nowrap;
+    }
+
+    .logout-btn:hover {
+      background: var(--border);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .logout-btn:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    .binder-progress { display: none; }
+
+    .binder-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 14px 8px 14px;
+      overflow: hidden;
+      background: white;
+      min-height: 0;
+    }
+
+    /* 오른쪽 인덱스 탭 */
+    .index-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 44px;
+      margin-left: -4px;
+      z-index: 1;
+    }
+
+    .index-tab {
+      width: 62px;
+      padding: 28px 12px;
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid var(--border);
+      border-left: none;
+      border-radius: 0 18px 18px 0;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.3rem;
+      color: white;
+      cursor: pointer;
+      box-shadow: 5px 0 0px var(--border);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      user-select: none;
+    }
+
+    .index-tab.active {
+      width: 76px;
+      padding-left: 24px;
+      color: black !important;
+      background-color: white !important;
+      box-shadow: 5px 0 14px rgba(0, 0, 0, 0.15);
+    }
+
+    #tab-practice { background-color: var(--tab-practice); color: #713F12 !important; }
+    #tab-mission  { background-color: var(--tab-mission);  color: #9A3412 !important; }
+    #tab-history  { background-color: var(--tab-history);  color: #0077B6 !important; }
+    #tab-badges   { background-color: var(--tab-badges);   color: #1E40AF !important; }
+    #tab-stats    { background-color: var(--tab-stats);    color: #5B21B6 !important; }
+    #tab-mastery  { background-color: var(--tab-mastery);  color: #1A5C8C !important; }
+
+    /* ===== 공통 화면 전환 ===== */
+    .hidden { display: none !important; }
+    .screen { display: none; }
+
+    #loginScreen.active {
+      display: flex !important;
+      flex-direction: column;
+      height: 100%;
+      min-height: 500px;
+    }
+
+    .splash-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px 20px 36px;
+      gap: 20px;
+    }
+
+    .splash-title {
+      font-family: 'Jua', sans-serif;
+      font-size: 4.5rem;
+      color: var(--main);
+      line-height: 1.1;
+      letter-spacing: -2px;
+      text-shadow: 2px 2px 0 #005F8A;
+    }
+
+    .splash-sub {
+      font-family: 'Jua', sans-serif;
+      font-size: 2rem;
+      color: var(--text-mid);
+      line-height: 1.5;
+    }
+
+    .splash-sub strong {
+      color: var(--dark);
+      background: #CAF0F8;
+      padding: 2px 8px 4px;
+      border-radius: 8px;
+    }
+
+    .login-form-area {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto 16px;
+    }
+
+    .login-btn-area {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      padding-top: 12px;
+    }
+
+    .btn-login-pill {
+      width: 100%;
+      padding: 22px 32px;
+      background: var(--main);
+      border: 3px solid #005F8A;
+      border-radius: 50px;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.8rem;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #005F8A;
+      transition: all 0.2s;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.15);
+    }
+
+    .btn-login-pill:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 var(--border);
+    }
+
+    .btn-login-pill:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--border);
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      animation: fadeIn 0.35s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px) }
+      to { opacity: 1; transform: translateY(0) }
+    }
+
+    /* ===== 로딩 ===== */
+    .loading-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(254, 252, 232, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .spinner {
+      border: 4px solid #FFE5B4;
+      border-top: 4px solid var(--border);
+      border-radius: 50%;
+      width: 44px; height: 44px;
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
+
+    /* ===== 환영/로그인 ===== */
+    .welcome-section { text-align: center; padding: 10px 0 24px; }
+    .welcome-section h2 { font-family: 'Jua', sans-serif; font-size: 1.6rem; color: var(--dark); margin-bottom: 8px; }
+    .welcome-section p { font-size: 1.05rem; color: var(--text-mid); margin-bottom: 20px; line-height: 1.7; }
+
+    /* ===== 폼 카드 ===== */
+    .form-card {
+      background: var(--yellow);
+      border-radius: 20px;
+      padding: 12px 18px;
+      box-shadow: 0 3px 0 var(--orange);
+      margin-bottom: 10px;
+      border: 2px solid var(--orange);
+    }
+
+    .input-label {
+      font-family: 'Jua', sans-serif;
+      font-size: 1.6rem;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+      display: block;
+      font-weight: 700;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 15px 18px;
+      border: 2px solid var(--orange);
+      border-radius: 12px;
+      font-family: 'Jua', sans-serif;
+      font-size: var(--t3);
+      outline: none;
+      background: white;
+      transition: border-color 0.2s;
+      margin-bottom: 14px;
+    }
+
+    .input-field:focus { border-color: var(--border); }
+    .input-field:last-child { margin-bottom: 0; }
+
+    /* ===== 버튼 ===== */
+    .btn {
+      padding: 12px 20px;
+      border: 3px solid var(--border);
+      border-radius: 35px;
+      font-family: 'Jua', sans-serif;
+      font-size: var(--t2);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      max-width: 400px;
+      margin: 12px auto;
+      box-shadow: 0 4px 0 var(--border);
+      white-space: nowrap;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--border); }
+
+    .btn-primary {
+      background: var(--main);
+      color: white;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+    }
+
+    .btn-practice {
+      background: var(--tab-practice);
+      color: #713F12;
+      border-color: #F59E0B;
+      box-shadow: 0 4px 0 #F59E0B;
+    }
+
+    .btn-success {
+      background: #B2F2BB;
+      border-color: #51CF66;
+      color: #1a7a2e;
+      box-shadow: 0 4px 0 #51CF66;
+    }
+    .btn-success:active { box-shadow: 0 1px 0 #51CF66; }
+
+    .btn-blue {
+      background: var(--btn-blue);
+      border-color: var(--btn-blue-border);
+      color: #1560a8;
+      box-shadow: 0 4px 0 var(--btn-blue-border);
+    }
+    .btn-blue:active { box-shadow: 0 1px 0 var(--btn-blue-border); }
+
+    .btn-outline {
+      background: white;
+      color: var(--dark);
+      border-color: #ddd;
+      box-shadow: 0 4px 0 #ddd;
+    }
+    .btn-outline:active { box-shadow: 0 1px 0 #ddd; }
+    .btn + .btn { margin-top: 5px; }
+
+    /* ===== 단계 표시기 ===== */
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 8px 14px;
+      background: var(--yellow);
+      border-radius: 14px;
+      border: 2px solid var(--orange);
+    }
+
+    .step-badge {
+      background: var(--border);
+      color: white;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.35rem;
+      padding: 8px 20px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .step-label {
+      font-family: 'Jua', sans-serif;
+      font-size: 2rem;
+      color: var(--dark);
+    }
+
+    .step-dots { display: flex; gap: 6px; margin-left: auto; }
+    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #ddd; }
+    .step-dot.active { background: var(--main); }
+    .step-dot.done { background: #63E6BE; }
+
+    /* ===== 섹션 제목 ===== */
+    .section-title {
+      font-family: 'Jua', sans-serif;
+      font-size: var(--t2);
+      color: var(--dark);
+      padding-bottom: 4px;
+      border-bottom: 3px solid var(--main);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title.history { border-color: var(--tab-history); }
+
+    /* ===== 메트로놈 ===== */
+    .metronome-panel {
+      background: var(--yellow);
+      border-radius: 16px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 2px solid var(--orange);
+      box-shadow: 0 3px 0 var(--orange);
+    }
+
+    .metro-visual {
+      width: 30px; height: 30px;
+      background: #FDE68A;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: all 0.1s;
+      border: 2px solid var(--orange);
+    }
+    .metro-visual.active {
+      background: var(--main);
+      transform: scale(1.2);
+      box-shadow: 0 0 16px rgba(251, 191, 36, 0.6);
+    }
+
+    .bpm-display { font-family: 'Jua', sans-serif; font-size: 1.5rem; color: var(--dark); min-width: 90px; text-align: center; }
+    .metro-range { flex: 1; accent-color: var(--border); }
+
+    .metro-btn {
+      padding: 8px 16px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      background: var(--border);
+      color: white;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      box-shadow: 0 3px 0 #004F7A;
+    }
+    .metro-btn:hover { filter: brightness(1.1); }
+    .metro-btn:active { transform: translateY(2px); box-shadow: none; }
+    .metro-beat-btn { background: #f0f9ff; border-color: #BAE6FD; color: #0369A1; box-shadow: 0 2px 0 #BAE6FD; }
+    .metro-beat-btn.active-beat { background: #0096C7; border-color: #005F8A; color: white; box-shadow: 0 2px 0 #005F8A; }
+    /* 시작 버튼 — 초록 */
+    .metro-btn.metro-start { background: #51CF66; border-color: #2B8A3E; box-shadow: 0 3px 0 #2B8A3E; }
+    /* BPM 조절 버튼 — 주황 */
+    .metro-btn.metro-bpm { background: #FF9F1C; border-color: #C2410C; box-shadow: 0 3px 0 #C2410C; }
+    .metro-divider { width: 2px; align-self: stretch; background: rgba(0,119,182,0.2); border-radius: 2px; margin: 4px 0; flex-shrink: 0; }
+
+    /* ===== 악보 버튼 ===== */
+    .sheet-btn {
+      background: var(--btn-blue);
+      border: 2px solid var(--btn-blue-border);
+      color: #1560a8;
+      padding: 13px 16px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.05rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 3px 0 var(--btn-blue-border);
+      transition: all 0.2s;
+    }
+    .sheet-btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .sheet-btn:active { transform: translateY(2px); box-shadow: none; }
+
+    .sheet-container {
+      border: 3px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      height: 460px;
+      display: none;
+      margin-bottom: 14px;
+    }
+    .sheet-container.active { display: block; animation: slideIn 0.4s ease; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: scale(0.97) }
+      to { opacity: 1; transform: scale(1) }
+    }
+
+    /* ===== 카운터 카드 ===== */
+    .count-card {
+      background: var(--yellow);
+      border-radius: 20px;
+      padding: 12px 14px;
+      text-align: center;
+      margin-bottom: 8px;
+      border: 2px solid var(--orange);
+      box-shadow: 0 3px 0 var(--orange);
+    }
+
+    .count-label { font-family: 'Jua', sans-serif; font-size: var(--t2); color: var(--text-mid); margin-bottom: 4px; }
+    .count-display { font-family: 'Jua', sans-serif; font-size: 4.5rem; color: var(--border); line-height: 1; margin: 4px 0 10px; }
+    .count-btns { display: flex; justify-content: center; gap: 16px; }
+
+    .c-round-btn {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      border: 3px solid var(--border);
+      font-size: 30px;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      box-shadow: 0 5px 0 var(--border);
+    }
+    .c-round-btn:hover { transform: scale(1.08); }
+    .c-round-btn:active { transform: scale(0.95) translateY(3px); box-shadow: none; }
+
+    /* ===== 성찰 카드 ===== */
+    .session-info-card {
+      background: var(--yellow);
+      border-left: 5px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      border: 2px solid var(--orange);
+      border-left: 5px solid var(--border);
+      font-family: 'Jua', sans-serif;
+      font-size: 1.3rem;
+      color: var(--dark);
+    }
+
+    /* ===== 기록 카드 ===== */
+    .history-card {
+      background: white;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border: 2px solid #FDE68A;
+      border-left: 5px solid var(--tab-history);
+      box-shadow: 0 3px 0 #FDE68A;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    .history-card:hover { transform: translateX(3px); }
+
+    .history-date { font-size: var(--t4); color: var(--text-light); margin-bottom: 4px; font-family: 'Nanum Gothic', sans-serif; }
+    .history-song { font-family: 'Jua', sans-serif; font-size: var(--t3); color: var(--dark); }
+    .history-count { font-family: 'Jua', sans-serif; font-size: var(--t2); color: var(--border); }
+
+    /* ===== 플로팅 UI ===== */
+    .float-ui {
+      position: fixed;
+      bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(160px);
+      background: white;
+      border: 3px solid var(--border);
+      padding: 12px 28px;
+      border-radius: 60px;
+      box-shadow: 0 6px 0 var(--border);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      z-index: 2000;
+      transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    .float-ui.visible { transform: translateX(-50%) translateY(0); }
+
+    .float-count-label { font-family: 'Jua', sans-serif; font-size: 1.1rem; color: var(--dark); white-space: nowrap; }
+
+    .float-close-btn {
+      background: #eee;
+      border: 2px solid #ddd;
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.00rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 0 #ccc;
+    }
+    .float-close-btn:hover { background: #FFE5B4; border-color: var(--orange); }
+
+    /* ===== 빈 화면 ===== */
+    .empty-state { text-align: center; padding: 20px 10px; color: var(--text-light); font-family: 'Jua', sans-serif; font-size: 1.05rem; }
+    .empty-state-icon { font-size: 2.2rem; display: block; margin-bottom: 8px; }
+
+    /* ===== 선택/입력 ===== */
+    .select-field {
+      width: 100%; padding: 15px 18px;
+      border: 2px solid var(--orange);
+      border-radius: 12px;
+      font-family: 'Jua', sans-serif;
+      font-size: var(--t3);
+      outline: none; background: white;
+      transition: border-color 0.2s;
+      appearance: auto; cursor: pointer;
+    }
+    .select-field:focus { border-color: var(--border); }
+
+    .textarea-field {
+      width: 100%; padding: 15px 18px;
+      border: 2px solid var(--orange);
+      border-radius: 12px;
+      font-family: 'Nanum Gothic', sans-serif;
+      font-size: var(--t3);
+      outline: none; background: white;
+      transition: border-color 0.2s;
+      resize: vertical; min-height: 160px; line-height: 1.8;
+    }
+    .textarea-field:focus { border-color: var(--border); }
+
+    /* ===== 연습 정보 바 ===== */
+    .practice-info-bar {
+      background: var(--main);
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      color: white;
+      box-shadow: 0 4px 0 var(--border);
+    }
+
+    .practice-info-song { font-family: 'Jua', sans-serif; font-size: var(--t2); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+    .practice-info-goals { font-family: 'Jua', sans-serif; font-size: 1.15rem; opacity: 0.95; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .goal-chip { background: rgba(255, 255, 255, 0.25); border-radius: 20px; padding: 4px 14px; font-size: 1rem; }
+
+    .index-tabs.locked .index-tab:not(.active) { opacity: 0.35; pointer-events: none; cursor: not-allowed; }
+    .tab-content { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
+    .tab-content.hidden { display: none !important; }
+
+    /* ===== 목표 버튼 ===== */
+    .goals-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .goal-group-label {
+      grid-column: 1 / -1;
+      font-family: 'Jua', sans-serif; font-size: 1.05rem; color: var(--text-mid);
+      padding: 4px 2px 0; border-bottom: 2px dashed var(--orange); margin-bottom: -4px;
+    }
+
+    .goal-btn {
+      position: relative; background: white;
+      border: 3px solid var(--border);
+      border-radius: 16px; padding: 16px 18px;
+      cursor: pointer; display: flex; flex-direction: row;
+      align-items: center; justify-content: center; gap: 12px;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+      box-shadow: 0 4px 0px var(--border);
+      font-family: 'Jua', sans-serif; font-size: 1.3rem;
+    }
+    .goal-btn:hover { background: var(--yellow); transform: translateY(-2px); }
+    .goal-btn:active { transform: translateY(1px); box-shadow: none; }
+
+    .goal-btn.selected {
+      background: var(--main) !important;
+      border-color: #005F8A !important;
+      color: white !important;
+      box-shadow: 0 2px 0 #005F8A !important;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+    }
+
+    .goal-icon { font-size: 2.1rem; }
+
+    .goal-btn::before {
+      content: attr(data-guide);
+      position: absolute; bottom: 110%; left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: rgba(0, 0, 0, 0.85); color: white;
+      padding: 12px 16px; border-radius: 12px;
+      font-size: 1.15rem; width: 320px; text-align: center;
+      opacity: 0; pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 100; font-family: 'Nanum Gothic', sans-serif;
+      line-height: 1.5; font-weight: normal;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      word-break: keep-all; overflow-wrap: break-word;
+    }
+
+    .goal-btn::after {
+      content: ''; position: absolute; bottom: 100%; left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      border-width: 8px 8px 0; border-style: solid;
+      border-color: rgba(0, 0, 0, 0.85) transparent transparent;
+      opacity: 0; pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 100;
+    }
+
+    .goal-btn:hover::before, .goal-btn:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .goal-btn.selected::before { background: var(--border); }
+    .goal-btn.selected::after { border-top-color: var(--border); }
+
+    @media (hover: none) {
+      .goal-btn:active::before, .goal-btn:active::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ===== 미션 카드 ===== */
+    .mission-card {
+      background: var(--yellow); border: 2px solid var(--orange);
+      border-radius: 20px; padding: 18px; margin-bottom: 14px;
+      box-shadow: 0 3px 0 var(--orange); transition: all 0.2s; position: relative;
+    }
+    .mission-card:hover { transform: translateY(-2px); box-shadow: 0 5px 0 var(--orange); }
+    .mission-card.completed { background: #E6FFEC; border-color: #51CF66; box-shadow: 0 3px 0 #51CF66; }
+
+    .mission-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .mission-title { font-family: 'Jua', sans-serif; font-size: var(--t3); color: var(--dark); }
+
+    .mission-badge {
+      background: var(--border); color: white;
+      padding: 6px 16px; border-radius: 20px;
+      font-size: var(--t4); font-family: 'Jua', sans-serif; white-space: nowrap;
+    }
+    .mission-badge.completed { background: #51CF66; }
+
+    .mission-info {
+      display: flex; flex-direction: column; gap: 12px;
+      margin: 16px 0; padding: 18px 20px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 12px; border: 2px dashed var(--orange);
+    }
+    .mission-info-item { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 2px solid rgba(0, 119, 182, 0.08); }
+    .mission-info-item:last-child { border-bottom: none; }
+    .mission-info-label { font-size: 1.15rem; color: var(--text-mid); margin-bottom: 0; min-width: 60px; }
+    .mission-info-value { font-family: 'Jua', sans-serif; font-size: 1.45rem; color: var(--dark); }
+
+    .mission-progress-container { margin: 12px 0; }
+    .mission-progress-bar { width: 100%; height: 22px; background: #ECFDF5; border-radius: 12px; overflow: hidden; border: 2px solid var(--orange); }
+    .mission-progress-fill {
+      height: 100%;
+      background: var(--main);
+      border-radius: 12px; transition: width 0.5s ease;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-family: 'Jua', sans-serif; font-size: 0.90rem; width: 0%;
+    }
+    .mission-actions { margin-top: 12px; display: flex; justify-content: center; }
+
+    /* 미션 인라인 연습 UI */
+    .mission-practice-ui {
+      background: var(--yellow); border: 3px solid var(--orange);
+      border-radius: 20px; padding: 16px; margin-top: 16px;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 14px; animation: fadeIn 0.3s ease;
+    }
+    .mission-practice-title { font-family: 'Jua', sans-serif; font-size: 1.15rem; color: var(--dark); margin-bottom: 4px; }
+    .mission-practice-count { display: flex; align-items: center; gap: 32px; }
+    .m-count-num { font-family: 'Jua', sans-serif; font-size: 3rem; color: var(--border); min-width: 60px; text-align: center; }
+
+    .m-btn-round {
+      width: 58px; height: 58px; border-radius: 50%;
+      border: 3px solid var(--border); font-size: 24px; color: white;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .m-btn-minus { background: #FF8787; box-shadow: 0 4px 0 #E03131; }
+    .m-btn-plus { background: #63E6BE; box-shadow: 0 4px 0 #2F9E44; }
+    .m-btn-round:active { transform: translateY(2px); box-shadow: none; }
+
+    /* ===== 뱃지 그리드 ===== */
+    .badges-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px; margin-bottom: 20px;
+      padding: 4px 2px;
+    }
+
+    .badge {
+      background: white; border: 2px solid var(--orange);
+      border-radius: 16px; padding: 14px 8px 12px;
+      text-align: center;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 3px 0 var(--orange);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px;
+    }
+    .badge:hover { transform: translateY(-3px); box-shadow: 0 6px 0 var(--orange); }
+    .badge.achieved { border-color: #FFD43B; box-shadow: 0 3px 0 #FFD43B; background: #FFF9E0; }
+    .badge.locked { opacity: 0.45; }
+    .badge.locked .badge-icon { filter: grayscale(100%); }
+    .badge-icon { font-size: 2.4rem; display: block; margin-bottom: 4px; }
+    .badge-name { font-family: 'Jua', sans-serif; font-size: 1.15rem; color: var(--dark); line-height: 1.3; word-break: keep-all; }
+    .badge-desc { font-size: 0.95rem; color: var(--text-mid); font-family: 'Nanum Gothic', sans-serif; line-height: 1.35; word-break: keep-all; }
+
+    /* ===== 연습 슬라이드 ===== */
+    .practice-slide-container {
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+      min-height: 0;
+    }
+    .practice-slide {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      overflow-y: auto;
+      padding: 4px 4px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+    /* 초기 위치 — JS로 덮어씀 */
+    #practiceStep1 { transform: translateX(0%); }
+    #practiceStep2 { transform: translateX(100%); }
+    #practiceStep3 { transform: translateX(200%); }
+    .practice-type-toggle {
+      display: flex; flex-direction: row; gap: 10px; margin-bottom: 14px;
+    }
+    .practice-type-btn {
+      flex: 1; padding: 16px 12px;
+      border: 3px solid #ddd; border-radius: 20px;
+      font-family: 'Jua', sans-serif; font-size: 1.3rem;
+      cursor: pointer; background: white; color: #aaa;
+      transition: all 0.2s; text-align: center;
+      box-shadow: 0 3px 0 #ddd;
+    }
+    .practice-type-btn:active { transform: translateY(2px); box-shadow: none; }
+    .practice-type-btn.selected-full {
+      background: var(--tab-practice); border-color: #F59E0B;
+      color: #713F12; box-shadow: 0 4px 0 #F59E0B;
+    }
+    .practice-type-btn.selected-partial {
+      background: var(--tab-history); border-color: #0077B6;
+      color: #1A5C8C; box-shadow: 0 4px 0 #0077B6;
+    }
+
+    /* ===== 레벨업 뱃지 ===== */
+    .level-badge-card {
+      border-radius: 20px; padding: 20px 24px;
+      display: flex; align-items: center; gap: 20px;
+      box-shadow: 0 4px 0; transition: all 0.3s;
+      margin-bottom: 4px;
+    }
+    .level-badge-card:hover { transform: translateY(-3px); }
+    .level-badge-icon { font-size: 3.5rem; flex-shrink: 0; }
+    .level-badge-info { flex: 1; }
+    .level-badge-name { font-family: 'Jua', sans-serif; font-size: 1.4rem; margin-bottom: 4px; }
+    .level-badge-desc { font-family: 'Nanum Gothic', sans-serif; font-size: 1.1rem; line-height: 1.5; }
+    .level-badge-next { font-family: 'Jua', sans-serif; font-size: 1rem; margin-top: 8px; opacity: 0.9; }
+    .level-progress { margin-top: 10px; }
+    .level-progress-bar { width: 100%; height: 12px; border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.5); }
+    .level-progress-fill { height: 100%; border-radius: 10px; transition: width 0.8s ease; }
+
+    /* 레벨별 색상 */
+    .lv-none   { background:#F3F4F6; border:3px solid #D1D5DB; box-shadow-color:#D1D5DB; color:#6B7280; }
+    .lv-bronze { background:#FFF7ED; border:3px solid #FB923C; box-shadow-color:#FB923C; color:#C2410C; }
+    .lv-silver { background:#F8FAFC; border:3px solid #94A3B8; box-shadow-color:#94A3B8; color:#475569; }
+    .lv-gold   { background:#FFFBEB; border:3px solid #FFBA5C; box-shadow-color:#FFBA5C; color:#7A4010; }
+    .lv-diamond{ background:#EFF6FF; border:3px solid #60A5FA; box-shadow-color:#60A5FA; color:#1D4ED8; }
+    .lv-legend { background:linear-gradient(135deg,#F5F3FF,#EDE9FE); border:3px solid #A78BFA; box-shadow-color:#A78BFA; color:#5B21B6; }
+
+    /* ===== 아코디언 ===== */
+    .accordion { margin-bottom: 10px; }
+    .accordion-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--yellow);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.25rem;
+      color: var(--dark);
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: 0 3px 0 var(--border);
+    }
+    .accordion-header:hover { filter: brightness(0.97); }
+    .accordion-header:active { transform: translateY(2px); box-shadow: none; }
+    .accordion-arrow {
+      font-size: 1rem;
+      transition: transform 0.3s ease;
+      color: var(--border);
+    }
+    .accordion-arrow.collapsed { transform: rotate(-90deg); }
+    .accordion-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
+    }
+    .accordion-body.open {
+      max-height: 2000px;
+      padding-top: 12px;
+    }
+
+    #masteryList {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .mastery-card {
+      background: white; border: 2px solid #DBEAFE;
+      border-radius: 16px; padding: 14px 16px; margin-bottom: 0;
+      box-shadow: 0 3px 0 #DBEAFE; transition: all 0.2s;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .mastery-card:hover { transform: translateY(-2px); box-shadow: 0 5px 0 #DBEAFE; }
+    .mastery-song-info { flex: 1; min-width: 0; }
+    .mastery-song-name { font-family: 'Jua', sans-serif; font-size: 1.25rem; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mastery-song-count { font-size: 0.85rem; color: var(--text-light); margin-top: 2px; }
+    .mastery-btns { display: flex; flex-direction: row; gap: 6px; flex-shrink: 0; }
+    .mastery-btn {
+      padding: 8px 12px; border-radius: 14px; border: 2px solid #ccc;
+      font-family: 'Jua', sans-serif; font-size: 1rem; cursor: pointer;
+      background: #f5f5f5; color: #888; transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .mastery-btn:hover { filter: brightness(0.95); transform: translateY(-1px); }
+    .mastery-btn.active-1 { background: #FFE5B4; border-color: #FF9F1C; color: #7A4010; box-shadow: 0 2px 0 #FF9F1C; }
+    .mastery-btn.active-2 { background: #DBEAFE; border-color: #0096C7; color: #1A5C8C; box-shadow: 0 2px 0 #0096C7; }
+
+    /* 연습 중 마스터 피드백 배너 */
+    .mastery-feedback-banner {
+      border-radius: 14px; padding: 12px 18px; margin-bottom: 14px;
+      font-family: 'Nanum Gothic', sans-serif; font-size: 1rem; line-height: 1.6;
+      display: none;
+    }
+    .mastery-feedback-banner.level-1 {
+      display: block; background: #FFE5B4;
+      border: 2px solid #FF9F1C; border-left: 5px solid #FF9F1C; color: #5C2D0A;
+    }
+    .mastery-feedback-banner.level-2 {
+      display: block; background: #DBEAFE;
+      border: 2px solid #0096C7; border-left: 5px solid #0096C7; color: #1A5C8C;
+    }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+
+    .stat-card {
+      background: var(--yellow); border: 2px solid var(--orange);
+      border-radius: 20px; padding: 12px 16px; text-align: center;
+      box-shadow: 0 4px 0 var(--orange); transition: all 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-3px); }
+    .stat-number { font-family: 'Jua', sans-serif; font-size: var(--t1); color: var(--border); margin: 6px 0; }
+    .stat-label { font-family: 'Jua', sans-serif; font-size: var(--t4); color: var(--text-mid); }
+
+    /* ===== 오늘의 미니 대시보드 ===== */
+    .today-dashboard {
+      display: flex; justify-content: space-around; align-items: center;
+      background: linear-gradient(135deg, #0096C7, #0077B6);
+      border-radius: 16px; padding: 10px 14px; margin-bottom: 10px;
+      box-shadow: 0 3px 0 #005F8A; color: white;
+    }
+    .dashboard-item { text-align: center; flex: 1; }
+    .dashboard-num { font-family: 'Jua', sans-serif; font-size: var(--t1); line-height: 1.1; margin-bottom: 6px; }
+    .dashboard-lbl { font-family: 'Jua', sans-serif; font-size: var(--t4); opacity: 0.9; }
+    .dashboard-divider { width: 1px; height: 50px; background: rgba(255, 255, 255, 0.4); }
+
+    /* ===== 탭 설명 박스 ===== */
+    .tab-desc-box {
+      background: var(--yellow); border: 2px solid var(--orange);
+      border-radius: 12px; padding: 7px 14px;
+      font-family: 'Nanum Gothic', sans-serif; font-size: var(--t3);
+      color: var(--text-mid); line-height: 1.4; margin-bottom: 8px;
+    }
+    .tab-desc-box strong { color: var(--dark); }
+
+    
+    
+    
+    /* ===== 선생님 메뉴 (연결 설정) ===== */
+    .teacher-menu-wrap { margin-top: 14px; text-align: center; }
+    .teacher-menu-toggle {
+      background: transparent; border: 2px solid var(--border);
+      color: var(--border); border-radius: 20px;
+      padding: 8px 20px; font-size: 1.1rem; cursor: pointer;
+      font-family: 'Jua', sans-serif;
+    }
+    .teacher-menu-panel {
+      margin-top: 12px; background: #F4FAFD; border: 2px solid var(--border);
+      border-radius: 16px; padding: 18px; text-align: left;
+      max-width: 460px; margin-left: auto; margin-right: auto;
+    }
+    .tm-row { margin-bottom: 12px; }
+    .tm-label { display: block; font-size: 1.05rem; color: var(--dark); margin-bottom: 6px; }
+    .tm-input {
+      width: 100%; box-sizing: border-box; padding: 10px 12px;
+      border: 2px solid #BBD9EC; border-radius: 10px; font-size: 1.05rem;
+      font-family: 'Nanum Gothic', sans-serif;
+    }
+    .tm-btn-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .tm-btn {
+      flex: 1; padding: 10px; border: none; border-radius: 10px;
+      font-size: 1.1rem; cursor: pointer; font-family: 'Jua', sans-serif; color: white;
+    }
+    .tm-connect { background: var(--border); }
+    .tm-disconnect { background: #94A3B8; }
+    .tm-link-box { display: flex; gap: 8px; align-items: center; }
+    .tm-link-box .tm-input { flex: 1; }
+    .tm-copy { background: var(--main); flex: 0 0 auto; padding: 10px 16px; }
+    .tm-hint { font-size: 0.95rem; color: #5A7A90; margin-top: 6px; line-height: 1.5; }
+    .tm-status { font-size: 1rem; color: var(--dark); margin-top: 8px; min-height: 1.2em; }
+  </style>
+</head>
+
+<body>
+
+  <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+    <div style="text-align:center;">
+      <div class="spinner"></div>
+      <p style="font-family:'Jua',sans-serif;font-size:1rem;color:var(--dark);">잠시만 기다려주세요...</p>
+    </div>
+  </div>
+
+  <!-- ===== 뱃지 축하 팝업 ===== -->
+  <div id="badgePopupOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;align-items:center;justify-content:center;">
+    <div id="badgePopupBox" style="background:white;border-radius:32px;padding:40px 36px;text-align:center;max-width:380px;width:90%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:4px solid var(--main);animation:badgePop 0.5s cubic-bezier(0.175,0.885,0.32,1.4) both;">
+      <div id="badgeConfetti" style="position:absolute;inset:0;border-radius:32px;overflow:hidden;pointer-events:none;"></div>
+      <div style="font-family:'Jua',sans-serif;font-size:1.1rem;color:var(--border);letter-spacing:1px;margin-bottom:12px;">🎊 새 뱃지 획득! 🎊</div>
+      <div id="badgePopupIcon" style="font-size:5.5rem;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(251,191,36,0.5));"></div>
+      <div id="badgePopupName" style="font-family:'Jua',sans-serif;font-size:2rem;color:var(--dark);margin-bottom:10px;"></div>
+      <div id="badgePopupDesc" style="font-family:'Nanum Gothic',sans-serif;font-size:1.1rem;color:var(--text-mid);line-height:1.6;margin-bottom:28px;"></div>
+      <button onclick="closeBadgePopup()" style="background:var(--main);border:3px solid #005F8A;color:white;font-family:'Jua',sans-serif;font-size:1.3rem;padding:14px 40px;border-radius:50px;cursor:pointer;box-shadow:0 5px 0 #005F8A;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">확인!</button>
+    </div>
+  </div>
+
+  <!-- ===== 뱃지 레벨업 안내 팝업 ===== -->
+  <div id="badgeInfoOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:28px;padding:32px 30px;max-width:580px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:4px solid #A78BFA;animation:badgePop 0.4s cubic-bezier(0.175,0.885,0.32,1.4) both;">
+      <div style="font-family:'Jua',sans-serif;font-size:1.7rem;color:#5B21B6;text-align:center;margin-bottom:20px;">⬆️ 연습 횟수 레벨업 시스템</div>
+      <div style="font-family:'Nanum Gothic',sans-serif;font-size:1.2rem;color:#4B5563;line-height:1.7;margin-bottom:20px;text-align:center;">연습을 쌓을수록 뱃지가 레벨업돼요!<br>더 높은 레벨에 도전해보세요 💪</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-radius:14px;background:#F3F4F6;border:2px solid #D1D5DB;">
+          <span style="font-size:2.2rem;flex-shrink:0;">⬜</span>
+          <div style="font-family:'Jua',sans-serif;font-size:1.35rem;color:#6B7280;white-space:nowrap;">시작 전 <span style="color:#9CA3AF;">— 아직 시작 안 함</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-radius:14px;background:#FFF7ED;border:2px solid #FB923C;">
+          <span style="font-size:2.2rem;flex-shrink:0;">🥉</span>
+          <div style="font-family:'Jua',sans-serif;font-size:1.35rem;color:#C2410C;white-space:nowrap;">브론즈 <span style="color:#9A3412;">— 5회 연습 달성!</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-radius:14px;background:#F8FAFC;border:2px solid #94A3B8;">
+          <span style="font-size:2.2rem;flex-shrink:0;">🥈</span>
+          <div style="font-family:'Jua',sans-serif;font-size:1.35rem;color:#475569;white-space:nowrap;">실버 <span style="color:#64748B;">— 누적 20회 달성!</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-radius:14px;background:#FFFBEB;border:2px solid #FFBA5C;">
+          <span style="font-size:2.2rem;flex-shrink:0;">🥇</span>
+          <div style="font-family:'Jua',sans-serif;font-size:1.35rem;color:#7A4010;white-space:nowrap;">골드 <span style="color:#5C2D0A;">— 누적 50회 달성!</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-radius:14px;background:#EFF6FF;border:2px solid #60A5FA;">
+          <span style="font-size:2.2rem;flex-shrink:0;">💎</span>
+          <div style="font-family:'Jua',sans-serif;font-size:1.35rem;color:#1D4ED8;white-space:nowrap;">다이아 <span style="color:#1E40AF;">— 누적 100회 달성!</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-radius:14px;background:#F5F3FF;border:2px solid #A78BFA;">
+          <span style="font-size:2.2rem;flex-shrink:0;">👑</span>
+          <div style="font-family:'Jua',sans-serif;font-size:1.35rem;color:#6D28D9;white-space:nowrap;">레전드 <span style="color:#5B21B6;">— 누적 200회 달성!</span></div>
+        </div>
+      </div>
+      <button onclick="closeBadgeInfoPopup()" style="width:100%;background:#A78BFA;border:3px solid #7C3AED;color:white;font-family:'Jua',sans-serif;font-size:1.2rem;padding:14px;border-radius:50px;cursor:pointer;box-shadow:0 4px 0 #7C3AED;transition:all 0.2s;">확인!</button>
+    </div>
+  </div>
+
+  <!-- ===== 화면 회전 안내 오버레이 ===== -->
+  <div id="rotateOverlay" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#0077B6,#1A5C8C);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:28px;">
+    <div style="font-size:5rem;animation:rotatePulse 1.8s ease-in-out infinite;">📱</div>
+    <div style="font-family:'Jua',sans-serif;font-size:1.8rem;color:white;text-align:center;line-height:1.8;">
+      기기를 <span style="color:#FDE68A;font-size:2.2rem;">가로</span>로 돌려주세요!<br>
+      <span style="font-size:1.2rem;opacity:0.85;">리코더 점프는 가로 화면에 최적화되어 있어요 🎵</span>
+    </div>
+    <div style="font-size:3rem;animation:rotatePulse 1.8s ease-in-out infinite 0.3s;">🔄</div>
+  </div>
+
+  <!-- ===== 미션 연습 입력 팝업 ===== -->
+  <!-- ===== 연습 저장 완료 팝업 ===== -->
+  <div id="saveSuccessOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10001;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:28px;padding:40px 32px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:4px solid #51CF66;animation:badgePop 0.4s cubic-bezier(0.175,0.885,0.32,1.4) both;text-align:center;">
+      <div style="font-size:4.5rem;line-height:1;margin-bottom:16px;">🎉</div>
+      <div style="font-family:'Jua',sans-serif;font-size:1.8rem;color:#2B8A3E;margin-bottom:10px;">기록 완료!</div>
+      <div id="saveSuccessDetail" style="font-family:'Jua',sans-serif;font-size:1.3rem;color:var(--dark);margin-bottom:8px;"></div>
+      <div style="font-family:'Nanum Gothic',sans-serif;font-size:1.1rem;color:var(--text-mid);margin-bottom:28px;">오늘도 멋진 연습이었어요! 👏</div>
+      <button onclick="closeSaveSuccess()" style="width:100%;background:#51CF66;border:3px solid #2B8A3E;color:white;font-family:'Jua',sans-serif;font-size:1.4rem;padding:16px;border-radius:50px;cursor:pointer;box-shadow:0 4px 0 #2B8A3E;">확인!</button>
+    </div>
+  </div>
+
+  <div id="missionPracticeOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:28px;padding:32px 28px;max-width:480px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:4px solid var(--main);animation:badgePop 0.4s cubic-bezier(0.175,0.885,0.32,1.4) both;">
+      <div id="missionPracticeSong" style="font-family:'Jua',sans-serif;font-size:1.6rem;color:var(--border);text-align:center;margin-bottom:6px;"></div>
+      <div style="font-family:'Jua',sans-serif;font-size:1.3rem;color:var(--dark);text-align:center;margin-bottom:24px;">🎵 오늘의 연습 달성 횟수</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:28px;margin-bottom:28px;">
+        <button class="c-round-btn" style="background:#FF8787;width:80px;height:80px;font-size:38px;" onclick="changeMissionPopupCount(-1)">−</button>
+        <span id="missionPopupCount" style="font-family:'Jua',sans-serif;font-size:5rem;color:var(--border);line-height:1;min-width:90px;text-align:center;">0</span>
+        <button class="c-round-btn" style="background:#51CF66;width:80px;height:80px;font-size:38px;" onclick="changeMissionPopupCount(1)">＋</button>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-outline" onclick="closeMissionPracticePopup()" style="flex:1;margin:0;">취소</button>
+        <button class="btn btn-success" onclick="confirmMissionPractice()" style="flex:2;margin:0;">연습 결과 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="scale-wrapper">
+  <div class="binder-wrapper">
+    <div class="binder-container">
+      <div class="binder-frame">
+
+        <div class="binder-header">
+          <div class="header-left">
+            <span class="grade-badge">🎵 리코더 점프</span>
+          </div>
+          <div class="header-right">
+            <div class="user-chip hidden" id="userChip"></div>
+            <button class="logout-btn hidden" id="logoutBtn" onclick="logout()">로그아웃</button>
+          </div>
+        </div>
+
+        <div id="toastContainer" class="toast-container"></div>
+
+        <div class="binder-content">
+
+          <!-- ===== 로그인 화면 ===== -->
+          <div id="loginScreen" class="screen active">
+            <div class="splash-section">
+              <div class="splash-title">🎵 리코더 점프</div>
+              <div class="splash-sub">매일 꾸준히, <strong>실력은 쑥쑥</strong>! 함께해요 🎶</div>
+            </div>
+
+            <div id="loginFormView" class="login-form-area hidden">
+              <div class="form-card">
+                <label class="input-label" for="studentName">이름</label>
+                <select id="studentName" class="select-field" onchange="updateNumberByName()">
+                  <option value="">이름을 선택하세요</option>
+                </select>
+                <input type="hidden" id="studentNumber">
+              </div>
+            </div>
+
+            <div class="login-btn-area">
+              <button id="loginActionBtn" class="btn-login-pill" onclick="handleLoginBtn()">로그인하여 시작하기 👤</button>
+            </div>
+
+            <!-- 선생님 메뉴 (연결 설정) -->
+            <div id="teacherMenuWrap" class="teacher-menu-wrap">
+              <button id="teacherMenuToggle" class="teacher-menu-toggle" onclick="toggleTeacherMenu()">⚙️ 선생님 메뉴</button>
+              <div id="teacherMenuPanel" class="teacher-menu-panel hidden">
+                <div class="tm-row">
+                  <label class="tm-label" for="execInput">우리 반 시트 주소 (웹 앱 URL)</label>
+                  <input type="text" id="execInput" class="tm-input" placeholder="https://script.google.com/.../exec">
+                </div>
+                <div class="tm-btn-row">
+                  <button class="tm-btn tm-connect" onclick="connectSheet()">연결하기</button>
+                  <button class="tm-btn tm-disconnect" onclick="disconnectSheet()">연결 해제</button>
+                </div>
+                <div id="studentLinkRow" class="tm-row hidden">
+                  <label class="tm-label">학생용 입장 주소</label>
+                  <div class="tm-link-box">
+                    <input type="text" id="studentLinkInput" class="tm-input" readonly>
+                    <button class="tm-btn tm-copy" onclick="copyStudentLink()">복사</button>
+                  </div>
+                  <div class="tm-hint">이 주소를 학생에게 공유하면, 학생 화면에는 선생님 메뉴가 보이지 않습니다.</div>
+                </div>
+                <div id="tmStatus" class="tm-status"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== 메인 화면 ===== -->
+          <div id="mainScreen" class="screen">
+
+            <!-- 연습하기 탭 -->
+            <div id="practiceTab" class="tab-content" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+
+              <!-- 대시보드 (항상 보임) -->
+              <div class="today-dashboard">
+                <div class="dashboard-item"><div class="dashboard-num" id="todaySessions">0</div><div class="dashboard-lbl">오늘 연습</div></div>
+                <div class="dashboard-divider"></div>
+                <div class="dashboard-item"><div class="dashboard-num" id="activeMissionCount">-</div><div class="dashboard-lbl">진행 미션</div></div>
+                <div class="dashboard-divider"></div>
+                <div class="dashboard-item"><div class="dashboard-num" id="myBadgeCount">-</div><div class="dashboard-lbl">내 뱃지</div></div>
+              </div>
+
+              <!-- 슬라이드 컨테이너 -->
+              <div class="practice-slide-container">
+
+                <!-- 슬라이드 1: 준비 -->
+                <div class="practice-slide" id="practiceStep1">
+                  <div class="step-indicator">
+                    <span class="step-badge">1단계</span>
+                    <span class="step-label">곡과 목표를 선택하세요</span>
+                    <div class="step-dots"><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div></div>
+                  </div>
+                  <div class="form-card">
+                    <label class="input-label" for="songSelect">연습할 곡 선택</label>
+                    <select id="songSelect" class="select-field"><option value="">곡을 선택하세요</option></select>
+                  </div>
+                  <div class="form-card" style="flex:1;">
+                    <label class="input-label">오늘의 연습 목표 (여러 개 선택 가능)</label>
+                    <div class="goals-container" id="goalsContainer">
+                      <div class="goal-btn" data-goal="자세" data-guide="허리를 펴고 리코더의 각도는 약 45도가 적당해요!" onclick="toggleGoal(this)"><span class="goal-icon">🧍</span><span>자세</span></div>
+                      <div class="goal-btn" data-goal="운지법" data-guide="구멍을 손가락 끝 마디로 정확하고 꼼꼼하게 막아주세요." onclick="toggleGoal(this)"><span class="goal-icon">🎹</span><span>운지법</span></div>
+                      <div class="goal-btn" data-goal="텅잉" data-guide="'두~' 하고 부드럽게 불어요. 음을 시작할 때마다 '두' 소리를 내보세요." onclick="toggleGoal(this)"><span class="goal-icon">🎵</span><span>텅잉</span></div>
+                      <div class="goal-btn" data-goal="소리" data-guide="낮은 음은 세게 불면 음정이 달라져요. 부드럽고 일정한 바람 세기를 유지해요." onclick="toggleGoal(this)"><span class="goal-icon">🔊</span><span>소리</span></div>
+                      <div class="goal-btn" data-goal="박자" data-guide="발바닥으로 박자를 타거나 일정한 속도로 연습해요." onclick="toggleGoal(this)"><span class="goal-icon">⏱️</span><span>박자</span></div>
+                      <div class="goal-btn" data-goal="리듬" data-guide="길고 짧은 음의 흐름을 계이름으로 먼저 읽어보세요." onclick="toggleGoal(this)"><span class="goal-icon">🥁</span><span>리듬</span></div>
+                      <div class="goal-btn" data-goal="음정" data-guide="정확한 높이의 소리가 나도록 손가락 위치를 확인해요." onclick="toggleGoal(this)"><span class="goal-icon">🎶</span><span>음정</span></div>
+                      <div class="goal-btn" data-goal="셈여림" data-guide="소리의 크기를 조절하며 풍부한 표현을 시도해보세요." onclick="toggleGoal(this)"><span class="goal-icon">📢</span><span>셈여림</span></div>
+                    </div>
+                  </div>
+                  <button class="btn btn-primary" onclick="startPracticing()">▶ 연습 시작!</button>
+                </div>
+
+                <!-- 슬라이드 2: 연습 -->
+                <div class="practice-slide" id="practiceStep2">
+                  <div class="step-indicator">
+                    <span class="step-badge">2단계</span>
+                    <span class="step-label">횟수를 기록하세요</span>
+                    <div class="step-dots"><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div></div>
+                  </div>
+                  <div class="practice-info-bar">
+                    <div class="practice-info-song" id="practiceInfoSong"></div>
+                    <div class="practice-info-goals" id="practiceInfoGoals"></div>
+                  </div>
+                  <div id="masteryFeedbackBanner" class="mastery-feedback-banner"></div>
+                  <div style="display:flex;gap:14px;align-items:stretch;margin-bottom:12px;">
+                    <div class="practice-type-toggle" style="flex-direction:column;flex:0 0 200px;margin-bottom:0;">
+                      <button class="practice-type-btn selected-full" id="typeBtnFull" onclick="setPracticeType('full')">🎵 완곡 연습</button>
+                      <button class="practice-type-btn" id="typeBtnPartial" onclick="setPracticeType('partial')">🔍 부분 집중</button>
+                    </div>
+                    <div class="count-card" style="flex:1;margin-bottom:0;">
+                      <div class="count-label" id="countLabel">완곡 성공 횟수</div>
+                      <div class="count-display" id="practiceCounter">0</div>
+                      <div class="count-btns">
+                        <button class="c-round-btn" style="background:#FF8787;" onclick="decreaseCounter()">−</button>
+                        <button class="c-round-btn" style="background:#51CF66;" onclick="increaseCounter()">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- 메트로놈 -->
+                  <div class="metronome-panel" style="flex-wrap:nowrap;gap:0;">
+                    <div class="metro-visual" id="metroVisual"></div>
+                    <!-- 그룹1: 시작 -->
+                    <div style="display:flex;align-items:center;padding:0 16px;flex-shrink:0;">
+                      <button class="metro-btn metro-start" id="metroToggleBtn" onclick="toggleMetronome()" style="flex-shrink:0;">▶ 시작</button>
+                    </div>
+                    <div class="metro-divider"></div>
+                    <!-- 그룹2: 박자 -->
+                    <div style="display:flex;gap:6px;flex-shrink:0;padding:0 16px;">
+                      <button class="metro-btn metro-beat-btn active-beat" id="beat24" onclick="setBeats(2)" style="padding:9px 14px;font-size:1.2rem;">2/4</button>
+                      <button class="metro-btn metro-beat-btn" id="beat34" onclick="setBeats(3)" style="padding:9px 14px;font-size:1.2rem;">3/4</button>
+                      <button class="metro-btn metro-beat-btn" id="beat44" onclick="setBeats(4)" style="padding:9px 14px;font-size:1.2rem;">4/4</button>
+                    </div>
+                    <div class="metro-divider"></div>
+                    <!-- 그룹3: BPM -->
+                    <div style="display:flex;align-items:center;gap:10px;flex:1;padding:0 16px;">
+                      <button class="metro-btn metro-bpm" onclick="changeBpm(-5)" style="padding:6px 11px;flex-shrink:0;">−</button>
+                      <div class="bpm-display" style="flex-shrink:0;white-space:nowrap;"><span id="bpmValue">80</span> <span style="font-size:1.1rem;">BPM</span></div>
+                      <button class="metro-btn metro-bpm" onclick="changeBpm(+5)" style="padding:6px 11px;flex-shrink:0;">＋</button>
+                      <input class="metro-range" id="bpmSlider" type="range" min="40" max="200" value="80" oninput="updateBpm(this.value)" style="flex:1;min-width:80px;">
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:10px;justify-content:center;max-width:500px;margin:8px auto 0;">
+                    <button class="btn btn-outline" onclick="backToSetup()" style="flex:1;margin:0;">← 다시 설정</button>
+                    <button class="btn btn-success" onclick="showReflectStep()" style="flex:1;margin:0;">✅ 종료 및 기록</button>
+                  </div>
+                </div>
+
+                <!-- 슬라이드 3: 기록 -->
+                <div class="practice-slide" id="practiceStep3">
+                  <div class="step-indicator">
+                    <span class="step-badge">3단계</span>
+                    <span class="step-label">연습을 돌아보고 기록하세요</span>
+                    <div class="step-dots"><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div></div>
+                  </div>
+                  <div class="section-title">🌟 내 연습 돌아보기</div>
+                  <div class="session-info-card" id="summaryText"></div>
+                  <div class="form-card">
+                    <label class="input-label" for="selfEvaluation">자기평가 (1-5점)</label>
+                    <select id="selfEvaluation" class="select-field">
+                      <option value="">평가하지 않음</option>
+                      <option value="1">1점 - 많이 어려워요</option>
+                      <option value="2">2점 - 어려워요</option>
+                      <option value="3">3점 - 보통이에요</option>
+                      <option value="4">4점 - 잘 했어요</option>
+                      <option value="5">5점 - 아주 잘 했어요!</option>
+                    </select>
+                  </div>
+                  <div class="form-card" style="flex:1;display:flex;flex-direction:column;">
+                    <label class="input-label" for="practiceMemo">💭 연습 메모 (자기성찰)</label>
+                    <textarea id="practiceMemo" class="textarea-field" style="flex:1;" placeholder="🌟 잘된 부분 / 🧩 어려웠던 부분 / 🎯 다음 목표를 자유롭게 적어보세요!"></textarea>
+                  </div>
+                  <div style="display:flex;gap:10px;justify-content:center;max-width:500px;margin:8px auto 0;">
+                    <button class="btn btn-outline" onclick="backToPracticeStep()" style="flex:1;margin:0;">← 이전으로</button>
+                    <button class="btn btn-success" onclick="savePractice()" style="flex:1;margin:0;">기록 저장 완료</button>
+                  </div>
+                </div>
+
+              </div><!-- /slide-container -->
+            </div>
+
+            <!-- 미션 탭 -->
+            <div id="missionTab" class="tab-content hidden">
+              <div class="section-title">🎯 선생님의 연습 미션</div>
+              <div class="tab-desc-box">💡 선생님이 제시한 미션을 완수하면 <strong>실력이 쑥쑥!</strong> 연습 횟수와 목표를 달성하면 자동으로 완료돼요 🏅</div>
+              <div id="missionsList"></div>
+              <div id="noMissionsMessage" class="hidden empty-state">
+                <span class="empty-state-icon">📋</span>진행 중인 미션이 없어요<br><small style="font-size:1.05rem;">선생님이 미션을 만들어주실 때까지 열심히 연습해요! 🔥</small>
+              </div>
+            </div>
+
+            <!-- 뱃지 탭 -->
+            <div id="badgesTab" class="tab-content hidden">
+              <div class="section-title" style="justify-content:space-between;">
+                <span>🏅 나의 달성 뱃지</span>
+                <button onclick="showBadgeInfoPopup()" style="background:#EDE9FE;border:2px solid #A78BFA;color:#5B21B6;font-family:'Jua',sans-serif;font-size:1.1rem;padding:10px 20px;border-radius:20px;cursor:pointer;box-shadow:0 3px 0 #A78BFA;flex-shrink:0;white-space:nowrap;">❓ 레벨업 안내</button>
+              </div>
+              <!-- 연습 횟수 레벨업 뱃지 (항상 표시) -->
+              <div id="levelBadge" style="margin-bottom:14px;"></div>
+
+              <!-- 아코디언: 획득한 뱃지 -->
+              <div class="accordion">
+                <button class="accordion-header" onclick="toggleAccordion('achievedAcc')">
+                  <span id="achievedAccTitle">✨ 획득한 뱃지</span>
+                  <span class="accordion-arrow" id="achievedAccArrow">▼</span>
+                </button>
+                <div class="accordion-body open" id="achievedAcc">
+                  <div id="achievedBadges" class="badges-grid"></div>
+                </div>
+              </div>
+
+              <!-- 아코디언: 도전 중인 뱃지 -->
+              <div class="accordion">
+                <button class="accordion-header" onclick="toggleAccordion('lockedAcc')">
+                  <span id="lockedAccTitle">🔒 도전 중인 뱃지</span>
+                  <span class="accordion-arrow collapsed" id="lockedAccArrow">▼</span>
+                </button>
+                <div class="accordion-body" id="lockedAcc">
+                  <div id="lockedBadges" class="badges-grid"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 마스터 탭 -->
+            <div id="masteryTab" class="tab-content hidden">
+              <div class="section-title">🏆 내 곡 숙달도 체크</div>
+              <div class="tab-desc-box">각 곡에서 나의 실력 수준을 스스로 체크해보세요! 선생님도 확인할 수 있어요 🌱</div>
+              <!-- 수준 설명 카드 -->
+              <div style="display:flex;gap:10px;margin-bottom:18px;">
+                <div style="flex:1;background:#FFE5B4;border:2px solid #FF9F1C;border-left:5px solid #FF9F1C;border-radius:14px;padding:12px 14px;">
+                  <div style="font-family:'Jua',sans-serif;font-size:1.1rem;color:#7A4010;margin-bottom:5px;">⭐ 연주 가능</div>
+                  <div style="font-family:'Nanum Gothic',sans-serif;font-size:1.00rem;color:#5C2D0A;line-height:1.6;">처음부터 끝까지 멈추지 않고 연주할 수 있어요. 틀리는 부분이 있어도 이어서 연주해요.</div>
+                </div>
+                <div style="flex:1;background:#DBEAFE;border:2px solid #0096C7;border-left:5px solid #0096C7;border-radius:14px;padding:12px 14px;">
+                  <div style="font-family:'Jua',sans-serif;font-size:1.1rem;color:#1A5C8C;margin-bottom:5px;">🏆 마스터</div>
+                  <div style="font-family:'Nanum Gothic',sans-serif;font-size:1.00rem;color:#03294F;line-height:1.6;">음정·박자가 정확하고, 셈여림 등 표현까지 살려 완성도 있게 연주할 수 있어요.</div>
+                </div>
+              </div>
+              <div id="masteryList">
+                <div class="empty-state"><span class="empty-state-icon">🎵</span>곡 목록을 불러오는 중...</div>
+              </div>
+            </div>
+
+            <!-- 통계 탭 -->
+            <div id="statsTab" class="tab-content hidden">
+              <div class="section-title">📊 나의 성장 기록</div>
+              <div class="tab-desc-box">📈 숫자로 보는 나의 리코더 여정! 꾸준함이 실력을 만들어요 💪</div>
+              <div class="stats-grid" id="statsGrid"></div>
+              <!-- 보기 모드 토글 -->
+              <div style="display:flex;gap:10px;margin-bottom:16px;">
+                <button id="viewBtnDate" class="practice-type-btn selected-full" style="flex:1; padding:16px; font-size:1.2rem;" onclick="switchStatsView('date')">📅 날짜별</button>
+                <button id="viewBtnSong" class="practice-type-btn" style="flex:1; padding:16px; font-size:1.2rem;" onclick="switchStatsView('song')">🎼 곡별</button>
+              </div>
+              <div id="statsDateView"></div>
+              <div id="statsSongView" style="display:none;"></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="index-tabs" id="indexTabs">
+        <div class="index-tab active" id="tab-practice" onclick="switchTab('practice', this)">연습</div>
+        <div class="index-tab" id="tab-mission" onclick="switchTab('mission', this)">미션</div>
+        <div class="index-tab" id="tab-badges" onclick="switchTab('badges', this)">뱃지</div>
+        <div class="index-tab" id="tab-mastery" onclick="switchTab('mastery', this)">숙달</div>
+        <div class="index-tab" id="tab-stats" onclick="switchTab('stats', this)">성장</div>
+      </div>
+
+    </div>
+  </div>
+  </div>
+
+  <script>
+
+    // ===== Scale 기반 반응형 =====
+    function checkRotate() {
+      const overlay = document.getElementById('rotateOverlay');
+      if (!overlay) return;
+      // 세로 모드이고 화면이 좁을 때 (태블릿 세로 포함)
+      const isPortrait = window.innerWidth < window.innerHeight;
+      const isSmall    = window.innerWidth < 1000;
+      overlay.style.display = (isPortrait && isSmall) ? 'flex' : 'none';
+    }
+
+    function autoScale() {
+      checkRotate();
+      var wrapper = document.getElementById('scale-wrapper');
+      if (!wrapper) return;
+      var designW = 1180;
+      var designH = 870;
+      var winW = window.innerWidth;
+      var winH = window.innerHeight;
+      var scaleX = winW / designW;
+      var scaleY = winH / designH;
+      var scale = Math.min(scaleX, scaleY, 1.3);
+      scale = Math.max(scale, 0.35);
+      wrapper.style.transform = 'scale(' + scale + ')';
+      wrapper.style.transformOrigin = 'top center';
+      // body 실제 높이 맞추기
+      document.body.style.height = (designH * scale) + 'px';      document.body.style.overflow = 'hidden';
+    }
+    window.addEventListener('resize', autoScale);
+    window.addEventListener('orientationchange', () => setTimeout(autoScale, 200));
+    window.addEventListener('DOMContentLoaded', function() { setTimeout(autoScale, 50); });
+
+    let currentStudent = null;
+    let practiceCount = 0;
+    let songList = [];
+    let selectedGoals = [];
+    let activeMissions = [];
+    let currentMission = null;
+    let selectedFile = null;
+    let allStudents = [];
+    let earnedBadgeIds = [];   // 현재 보유 뱃지 ID 목록 (새 뱃지 감지용)
+    let masteryMap = {};       // {곡명: 1(연주가능)|2(마스터)} 숙달도 맵
+    let practiceType = 'full'; // 'full'(완곡) | 'partial'(부분)
+
+    // ===== 연결 상태 / 통신 계층 =====
+    const APP_ID = 'recorderjump';          // 앱 식별자 (로컬 저장 키에 사용)
+    const STORE_KEY = 'recorderjump:exec';  // 연결 주소 저장 키
+
+    let serverUrl = '';        // 연결된 시트 주소 (.../exec). 비어 있으면 데모 모드
+    let isDemo = true;         // true=데모(체험), false=연동
+    let isStudentLink = false; // 학생용 링크(#c=)로 들어왔는지
+
+    // 접속 방식만으로 연결 상태를 자동 판별한다.
+    function detectConnection() {
+      // 1) 학생용 링크(#c=<주소>)로 접속 → 연동 + 설정 버튼 숨김
+      const hash = window.location.hash || '';
+      const m = hash.match(/[#&]c=([^&]+)/);
+      if (m && m[1]) {
+        try { serverUrl = decodeURIComponent(m[1]); } catch (e) { serverUrl = m[1]; }
+        isDemo = false;
+        isStudentLink = true;
+        return;
+      }
+      // 2) 브라우저에 저장된 주소 있음 → 연동 + 설정 보임
+      let saved = '';
+      try { saved = localStorage.getItem(STORE_KEY) || ''; } catch (e) {}
+      if (saved) {
+        serverUrl = saved;
+        isDemo = false;
+        isStudentLink = false;
+        return;
+      }
+      // 3) 둘 다 없음 → 데모(체험) 모드 + 설정 보임
+      serverUrl = '';
+      isDemo = true;
+      isStudentLink = false;
+    }
+
+    // 모든 서버 호출의 공통 입구.
+    // 연동 모드면 연결된 주소로 요청을 보내고, 데모 모드면 로컬에서 처리한다.
+    function callServer(action, payload) {
+      if (isDemo) {
+        return demoHandle(action, payload || {});
+      }
+      return fetch(serverUrl, {
+        method: 'POST',
+        // 사전 확인 요청 없이 곧바로 전송되도록 일반 텍스트로 보낸다
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: action, payload: payload || {} })
+      })
+      .then(function(res) { return res.json(); });
+    }
+
+    // ===== 데모 모드 로컬 처리 =====
+    function demoKey(studentNumber) {
+      return APP_ID + ':demo:' + studentNumber;
+    }
+    function demoLoad(studentNumber) {
+      try {
+        const raw = localStorage.getItem(demoKey(studentNumber));
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+    function demoSave(studentNumber, data) {
+      try { localStorage.setItem(demoKey(studentNumber), JSON.stringify(data)); } catch (e) {}
+    }
+
+    // 데모용 곡 목록 (체험용 샘플)
+    const DEMO_SONGS = [
+      { name: '비행기', difficulty: '초급' },
+      { name: '학교종', difficulty: '초급' },
+      { name: '도토리', difficulty: '중급' },
+      { name: '종달새의 하루', difficulty: '중급' }
+    ];
+    // 데모용 미션 (체험용 샘플)
+    const DEMO_MISSIONS = [
+      { missionId: 'DEMO_M1', title: '이번 주 미션', songName: '도토리',
+        targetCount: 5, goals: '박자', deadline: '', description: '도토리를 박자에 맞춰 5번 연습해요.' }
+    ];
+
+    // 데모 모드: 오늘 날짜 (YYYY-MM-DD)
+    function demoToday() {
+      const d = new Date();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return d.getFullYear() + '-' + mm + '-' + dd;
+    }
+
+    // 데모 데이터로부터 통계·뱃지·미션 진행도를 계산해 서버 응답과 같은 형태로 반환
+    function demoComputeAllData(studentNumber) {
+      const store = demoLoad(studentNumber) || { history: [], mastery: {} };
+      const history = (store.history || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+      const today = demoToday();
+      const todayRecords = history.filter(r => r.date === today);
+
+      const total = history.reduce((s, r) => s + (r.practiceCount || 0), 0);
+
+      // 날짜별 통계
+      const dateMap = {};
+      history.forEach(r => {
+        if (!dateMap[r.date]) dateMap[r.date] = { date: r.date, totalPractice: 0 };
+        dateMap[r.date].totalPractice += r.practiceCount;
+      });
+      // 곡별 통계
+      const songMap = {};
+      history.forEach(r => {
+        if (!songMap[r.songName]) songMap[r.songName] = { songName: r.songName, totalPractice: 0, lastPractice: r.date };
+        songMap[r.songName].totalPractice += r.practiceCount;
+        if (r.date > songMap[r.songName].lastPractice) songMap[r.songName].lastPractice = r.date;
+      });
+
+      // 뱃지 계산 (서버와 동일 규칙)
+      const badges = [];
+      if (total > 0)    badges.push({ id: 'first_practice' });
+      if (total >= 5)   badges.push({ id: 'practice_5' });
+      if (total >= 20)  badges.push({ id: 'practice_20' });
+      if (total >= 50)  badges.push({ id: 'practice_50' });
+      if (total >= 100) badges.push({ id: 'practice_100' });
+      if (total >= 200) badges.push({ id: 'practice_200' });
+
+      const practiceDates = [...new Set(history.map(r => r.date))].sort();
+      let maxStreak = practiceDates.length === 1 ? 1 : 0, curStreak = 1;
+      for (let i = 1; i < practiceDates.length; i++) {
+        const diff = (new Date(practiceDates[i]) - new Date(practiceDates[i-1])) / 86400000;
+        if (diff === 1) { curStreak++; maxStreak = Math.max(maxStreak, curStreak); }
+        else { curStreak = 1; }
+      }
+      if (maxStreak >= 3) badges.push({ id: 'streak_3' });
+      if (maxStreak >= 7) badges.push({ id: 'streak_7' });
+
+      const uniqueSongs = Object.keys(songMap).length;
+      if (uniqueSongs >= 3) badges.push({ id: 'songs_3' });
+      if (uniqueSongs >= 5) badges.push({ id: 'songs_5' });
+
+      const reflections = history.filter(r => r.selfEvaluation && Number(r.selfEvaluation) > 0).length;
+      if (reflections >= 5) badges.push({ id: 'reflection_5' });
+
+      const goalsSet = history.filter(r => r.goals && String(r.goals).trim()).length;
+      if (goalsSet >= 10) badges.push({ id: 'goal_10' });
+
+      // 미션 진행도
+      const missions = DEMO_MISSIONS;
+      const missionProgress = {};
+      missions.forEach(m => {
+        const completedCount = history
+          .filter(h => h.songName === m.songName)
+          .reduce((s, h) => s + h.practiceCount, 0);
+        const percentage = m.targetCount > 0
+          ? Math.min(100, Math.round((completedCount / m.targetCount) * 100)) : 0;
+        const isCompleted = completedCount >= m.targetCount;
+        missionProgress[m.missionId] = { completedCount, targetCount: m.targetCount, percentage, isCompleted };
+      });
+      const completedMissions = Object.values(missionProgress).filter(p => p.isCompleted).length;
+      if (completedMissions >= 1) badges.push({ id: 'mission_complete_1' });
+      if (completedMissions >= 3) badges.push({ id: 'mission_complete_3' });
+
+      return {
+        history: history,
+        todayRecords: todayRecords,
+        songs: DEMO_SONGS,
+        missions: missions,
+        missionProgress: missionProgress,
+        badges: badges,
+        masteryMap: store.mastery || {},
+        dateStats: Object.values(dateMap).sort((a, b) => b.date.localeCompare(a.date)),
+        songStats: Object.values(songMap).sort((a, b) => b.totalPractice - a.totalPractice)
+      };
+    }
+
+    // 데모 모드 요청 처리 (서버 대신 로컬에서 응답)
+    function demoHandle(action, p) {
+      if (action === 'getAllStudents') {
+        const list = [];
+        for (let i = 1; i <= 30; i++) list.push({ studentNumber: String(i), studentName: '학생 ' + i });
+        return Promise.resolve(list);
+      }
+      if (action === 'loginStudent') {
+        return Promise.resolve({ success: true, studentNumber: String(p.studentNumber), studentName: p.studentName, message: '체험 모드로 시작합니다.' });
+      }
+      if (action === 'getSongList') {
+        return Promise.resolve(DEMO_SONGS);
+      }
+      if (action === 'getStudentAllData') {
+        return Promise.resolve(demoComputeAllData(String(p.studentNumber)));
+      }
+      if (action === 'savePracticeRecord') {
+        const sn = String(p.studentNumber);
+        const store = demoLoad(sn) || { history: [], mastery: {} };
+        store.history = store.history || [];
+        store.history.push({
+          recordId: 'demo_' + Date.now(),
+          date: demoToday(),
+          songName: p.songName,
+          practiceCount: p.practiceCount,
+          goals: p.goals,
+          selfEvaluation: p.selfEval,
+          memo: p.memo,
+          recordType: p.missionId ? '🎯 미션수행' : '📝 일반연습',
+          missionId: p.missionId || null,
+          practiceType: p.practiceType || '완곡연습'
+        });
+        demoSave(sn, store);
+        return Promise.resolve({ success: true, message: '체험 기록이 저장되었습니다! (이 기기에만 저장돼요)', demo: true });
+      }
+      if (action === 'setSongMastery') {
+        const sn = String(p.studentNumber);
+        const store = demoLoad(sn) || { history: [], mastery: {} };
+        store.mastery = store.mastery || {};
+        if (p.level === 0) delete store.mastery[p.songName];
+        else store.mastery[p.songName] = p.level;
+        demoSave(sn, store);
+        return Promise.resolve({ success: true });
+      }
+      if (action === 'getBuildInfo') {
+        return Promise.resolve({ sig: 'DEMO', owner: 'GEG 화성(깊이 e끌림)', year: 2026 });
+      }
+      return Promise.resolve({ success: false, message: '알 수 없는 요청입니다: ' + action });
+    }
+
+    // ===== 데이터 캐시 =====
+    const cache = {
+      history: null, todayRecords: null, songs: null,
+      missions: null, missionProgress: {}, badges: null,
+      masteryMap: null, dateStats: null, songStats: null,
+      loaded: false
+    };
+
+    function invalidateCache() {
+      // 저장 후 캐시 무효화 → 백그라운드 재패치
+      cache.loaded = false;
+      cache.history = null; cache.todayRecords = null;
+      cache.missions = null; cache.missionProgress = {};
+      cache.badges = null; cache.dateStats = null; cache.songStats = null;
+      // masteryMap, songs는 자주 안 바뀌므로 유지
+    }
+
+    window.addEventListener('load', () => {
+      // 접속 방식으로 연결 상태 먼저 판별
+      detectConnection();
+      applyTeacherMenuVisibility();
+      // 이름 드롭다운 로딩 중 표시
+      document.getElementById('studentName').innerHTML = '<option value="">불러오는 중...</option>';
+      loadStudentList();
+    });
+
+    // 명단 로드 (연동/데모 공통)
+    function loadStudentList() {
+      callServer('getAllStudents', {})
+        .then((students) => {
+          allStudents = Array.isArray(students) ? students : [];
+          populateNameDropdown();
+        })
+        .catch((err) => {
+          document.getElementById('studentName').innerHTML = '<option value="">이름을 선택하세요</option>';
+          alert('명단을 가져오지 못했습니다.\n연결 주소를 확인해 주세요.\n이유: ' + (err && err.message ? err.message : err));
+        });
+    }
+
+    // ===== 선생님 메뉴 (연결 설정) =====
+    // 학생용 링크로 들어왔으면 메뉴 버튼 자체를 DOM에서 제거한다.
+    function applyTeacherMenuVisibility() {
+      const wrap = document.getElementById('teacherMenuWrap');
+      if (!wrap) return;
+      if (isStudentLink) {
+        wrap.parentNode.removeChild(wrap);  // 단순 숨김이 아니라 완전히 제거
+        return;
+      }
+      // 이미 연결돼 있으면 상태·학생 링크를 채워둔다
+      if (serverUrl) {
+        const execInput = document.getElementById('execInput');
+        if (execInput) execInput.value = serverUrl;
+        buildStudentLink();
+        setTmStatus('현재 우리 반 시트에 연결되어 있습니다.');
+      } else {
+        setTmStatus('지금은 체험 모드예요. 시트 주소를 연결하면 기록이 저장됩니다.');
+      }
+    }
+
+    function toggleTeacherMenu() {
+      const panel = document.getElementById('teacherMenuPanel');
+      if (panel) panel.classList.toggle('hidden');
+    }
+
+    function setTmStatus(msg) {
+      const el = document.getElementById('tmStatus');
+      if (el) el.textContent = msg;
+    }
+
+    // 학생용 입장 주소 생성 (#c=<exec>)
+    function buildStudentLink() {
+      if (!serverUrl) return;
+      const base = window.location.origin + window.location.pathname;
+      const link = base + '#c=' + encodeURIComponent(serverUrl);
+      const row = document.getElementById('studentLinkRow');
+      const input = document.getElementById('studentLinkInput');
+      if (input) input.value = link;
+      if (row) row.classList.remove('hidden');
+    }
+
+    // [연결하기] — 주소 저장 후 새로고침 없이 데모 → 연동 전환
+    function connectSheet() {
+      const raw = (document.getElementById('execInput').value || '').trim();
+      if (!raw) { setTmStatus('시트 주소를 입력해 주세요.'); return; }
+      if (!/^https:\/\/script\.google\.com\/.*\/exec/.test(raw)) {
+        setTmStatus('형식이 올바르지 않아요. ".../exec"로 끝나는 웹 앱 주소여야 합니다.');
+        return;
+      }
+      // 되는 주소인지 먼저 확인한다. (틀린 주소가 저장돼 남지 않게)
+      setTmStatus('연결을 확인하는 중이에요...');
+      const prevUrl = serverUrl, prevDemo = isDemo;
+      serverUrl = raw; isDemo = false;
+      callServer('getAllStudents', {})
+        .then((students) => {
+          // 응답이 정상(배열)이면 저장하고 명단을 채운다.
+          if (!Array.isArray(students)) throw new Error('올바른 응답이 아니에요');
+          try { localStorage.setItem(STORE_KEY, raw); } catch (e) {}
+          buildStudentLink();
+          const bar = document.getElementById('__demoBar');
+          if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+          setTmStatus('연결되었습니다. 우리 반 시트를 사용합니다.');
+          allStudents = students;
+          populateNameDropdown();
+        })
+        .catch((err) => {
+          serverUrl = prevUrl; isDemo = prevDemo;
+          setTmStatus('연결이 안 됐어요. 주소와 배포 권한(모든 사용자)을 확인해 주세요.');
+        });
+    }
+
+    // 연결 해제 → 데모 모드로
+    function disconnectSheet() {
+      try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+      serverUrl = '';
+      isDemo = true;
+      const row = document.getElementById('studentLinkRow');
+      if (row) row.classList.add('hidden');
+      setTmStatus('연결이 해제되었습니다. 지금은 체험 모드예요.');
+      document.getElementById('studentName').innerHTML = '<option value="">불러오는 중...</option>';
+      loadStudentList();
+    }
+
+    function copyStudentLink() {
+      const input = document.getElementById('studentLinkInput');
+      if (!input || !input.value) return;
+      input.select();
+      try {
+        navigator.clipboard.writeText(input.value).then(
+          () => setTmStatus('학생용 주소가 복사되었습니다.'),
+          () => { document.execCommand('copy'); setTmStatus('학생용 주소가 복사되었습니다.'); }
+        );
+      } catch (e) {
+        document.execCommand('copy');
+        setTmStatus('학생용 주소가 복사되었습니다.');
+      }
+    }
+
+    // 모든 학생 이름을 드롭다운에 채움
+    function populateNameDropdown() {
+      const nameSelect = document.getElementById('studentName');
+      nameSelect.innerHTML = '<option value="">이름을 선택하세요</option>';
+      allStudents.forEach((s, idx) => {
+        const sName = s.studentName || s['학생이름'] || s['이름'] || '';
+        if (!sName) return;
+        const opt = document.createElement('option');
+        opt.value = String(idx);          // 동명이인 대비: 인덱스를 값으로
+        opt.textContent = sName;
+        nameSelect.appendChild(opt);
+      });
+    }
+
+    // 이름을 선택하면 숨겨진 학번을 자동 설정
+    function updateNumberByName() {
+      const idx = document.getElementById('studentName').value;
+      const numberField = document.getElementById('studentNumber');
+      if (idx === '' || !allStudents[idx]) { numberField.value = ''; return; }
+      const s = allStudents[idx];
+      numberField.value = String(s.studentNumber || s['번호'] || s['학번'] || '').trim();
+    }
+
+    function login() {
+      const idx = document.getElementById('studentName').value;
+      if (idx === '' || !allStudents[idx]) return alert('이름을 선택해주세요!');
+      const student = allStudents[idx];
+      const name = (student.studentName || student['학생이름'] || student['이름'] || '').trim();
+      const number = String(student.studentNumber || student['번호'] || student['학번'] || '').trim();
+      if (!number) return alert('선택한 학생의 번호 정보가 없습니다. 선생님께 알려주세요.');
+      showLoading();
+      callServer('loginStudent', { studentNumber: number, studentName: name })
+        .then((result) => {
+          hideLoading();
+          if (!result || !result.success) return alert('로그인에 실패했습니다.');
+          currentStudent = result;
+          document.getElementById('userChip').textContent = result.studentName + ' 학생';
+          document.getElementById('userChip').classList.remove('hidden');
+          document.getElementById('logoutBtn').classList.remove('hidden');
+          switchScreen('mainScreen');
+          // 로그인 직후 모든 데이터를 한 번에 패치
+          prefetchAllData();
+        })
+        .catch((error) => { hideLoading(); alert('오류가 발생했습니다: ' + (error && error.message ? error.message : error)); });
+    }
+
+    function logout() {
+      if (!confirm('로그아웃 하시겠습니까?')) return;
+      currentStudent = null; practiceCount = 0; selectedGoals = []; selectedFile = null; currentMission = null; activeMissions = [];
+      cache.loaded = false; cache.history = null; cache.todayRecords = null;
+      cache.missions = null; cache.missionProgress = {}; cache.badges = null;
+      cache.masteryMap = null; cache.dateStats = null; cache.songStats = null; cache.songs = null;
+      document.getElementById('userChip').classList.add('hidden');
+      document.getElementById('logoutBtn').classList.add('hidden');
+      switchScreen('loginScreen');
+      document.getElementById('studentNumber').value = '';
+      populateNameDropdown();
+    }
+
+    function handleLoginBtn() {
+      const formView = document.getElementById('loginFormView');
+      const btn = document.getElementById('loginActionBtn');
+      if (formView.classList.contains('hidden')) { formView.classList.remove('hidden'); btn.innerHTML = '🎵 시작하기!'; }
+      else { login(); }
+    }
+
+    function switchScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+      if (screenId === 'loginScreen') {
+        const formView = document.getElementById('loginFormView');
+        const btn = document.getElementById('loginActionBtn');
+        if (formView) formView.classList.add('hidden');
+        if (btn) btn.innerHTML = '로그인하여 시작하기 👤';
+      }
+    }
+
+    function switchTab(tabName, tabEl) {
+      document.querySelectorAll('.index-tab').forEach(t => t.classList.remove('active'));
+      if (tabEl) tabEl.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+      document.getElementById(tabName + 'Tab').classList.remove('hidden');
+      // 캐시가 있으면 즉시 렌더, 없으면 로딩 후 렌더
+      if (tabName === 'mission') renderMissions();
+      if (tabName === 'badges') renderBadges();
+      if (tabName === 'mastery') renderMasteryTab();
+      if (tabName === 'stats') renderStats();
+      if (tabName === 'practice') renderTodayPractice();
+    }
+
+    // ===== 프리패치: 로그인 직후 모든 데이터 한 번에 =====
+    function prefetchAllData(onComplete) {
+      if (!currentStudent) return;
+      showLoading();
+      callServer('getStudentAllData', { studentNumber: currentStudent.studentNumber })
+        .then((data) => {
+          hideLoading();
+          if (!data) { showToast('데이터 로드에 실패했습니다.', 'error'); return; }
+          // 캐시에 저장
+          cache.history        = data.history        || [];
+          cache.todayRecords   = data.todayRecords   || [];
+          cache.songs          = data.songs          || [];
+          cache.missions       = data.missions       || [];
+          cache.missionProgress= data.missionProgress|| {};
+          cache.badges         = data.badges         || [];
+          cache.masteryMap     = data.masteryMap     || {};
+          cache.dateStats      = data.dateStats      || [];
+          cache.songStats      = data.songStats      || [];
+          cache.loaded         = true;
+          // 전역 변수 동기화
+          songList         = cache.songs;
+          activeMissions   = cache.missions;
+          masteryMap       = cache.masteryMap;
+          earnedBadgeIds   = cache.badges.map(b => b.id);
+          // 곡 선택 드롭다운 채우기
+          applySongList(cache.songs);
+          // 현재 탭 바로 렌더
+          renderTodayPractice();
+          // 대시보드 숫자 갱신
+          const todayEl = document.getElementById('todaySessions');
+          if (todayEl) todayEl.textContent = cache.todayRecords.length + '회';
+          const mEl = document.getElementById('activeMissionCount');
+          if (mEl) mEl.textContent = cache.missions.length + '개';
+          const bEl = document.getElementById('myBadgeCount');
+          if (bEl) bEl.textContent = earnedBadgeIds.length + '개';
+          if (onComplete) onComplete();
+        })
+        .catch((e) => { hideLoading(); showToast('데이터 로드 오류: ' + (e && e.message ? e.message : e), 'error'); });
+    }
+
+    // 저장 후 백그라운드 재패치 (로딩 스피너 없이)
+    function silentRefetch() {
+      if (!currentStudent) return;
+      callServer('getStudentAllData', { studentNumber: currentStudent.studentNumber })
+        .then((data) => {
+          if (!data) return;
+          cache.history         = data.history        || [];
+          cache.todayRecords    = data.todayRecords   || [];
+          cache.missions        = data.missions       || [];
+          cache.missionProgress = data.missionProgress|| {};
+          cache.badges          = data.badges         || [];
+          cache.masteryMap      = data.masteryMap     || {};
+          cache.dateStats       = data.dateStats      || [];
+          cache.songStats       = data.songStats      || [];
+          cache.loaded          = true;
+          activeMissions        = cache.missions;
+          masteryMap            = cache.masteryMap;
+          const prevIds = [...earnedBadgeIds];
+          earnedBadgeIds        = cache.badges.map(b => b.id);
+          // 현재 탭 재렌더
+          const activeTab = document.querySelector('.index-tab.active');
+          if (activeTab) {
+            const id = activeTab.id.replace('tab-', '');
+            if (id === 'practice') renderTodayPractice();
+            if (id === 'mission')  renderMissions();
+            if (id === 'stats')    renderStats();
+          }
+          // 새 뱃지 감지
+          const justEarned = earnedBadgeIds.filter(id => !prevIds.includes(id));
+          if (justEarned.length > 0) showBadgePopupQueue(justEarned);
+          // 대시보드 갱신
+          const todayEl = document.getElementById('todaySessions');
+          if (todayEl) todayEl.textContent = cache.todayRecords.length + '회';
+          const mEl = document.getElementById('activeMissionCount');
+          if (mEl) mEl.textContent = cache.missions.length + '개';
+          const bEl = document.getElementById('myBadgeCount');
+          if (bEl) bEl.textContent = earnedBadgeIds.length + '개';
+        })
+        .catch(() => {});
+    }
+
+    function toggleGoal(element) {
+      const goal = element.getAttribute('data-goal');
+      if (element.classList.contains('selected')) { element.classList.remove('selected'); selectedGoals = selectedGoals.filter(g => g !== goal); }
+      else { element.classList.add('selected'); selectedGoals.push(goal); }
+    }
+
+    function applySongList(songs) {
+      songList = Array.isArray(songs) ? songs : [];
+      const select = document.getElementById('songSelect');
+      if (songList.length === 0) {
+        select.innerHTML = '<option value="">선생님이 연습곡을 등록하면 표시돼요</option>';
+        return;
+      }
+      select.innerHTML = '<option value="">곡을 선택하세요</option>';
+      songList.forEach(song => {
+        const option = document.createElement('option');
+        option.value = song.name;
+        option.textContent = song.difficulty ? `${song.name} (${song.difficulty})` : song.name;
+        select.appendChild(option);
+      });
+    }
+
+    function loadSongList() {
+      if (cache.songs) { applySongList(cache.songs); return; }
+      callServer('getSongList', {})
+        .then((songs) => { applySongList(songs); })
+        .catch((err) => { showToast('곡 목록 오류: ' + (err && err.message ? err.message : err), 'error'); });
+    }
+
+    function increaseCounter() { practiceCount++; updateCounterDisplay(); }
+    function decreaseCounter() { if (practiceCount > 0) practiceCount--; updateCounterDisplay(); }
+    function updateCounterDisplay() { document.getElementById('practiceCounter').textContent = practiceCount; }
+
+    // ===== 슬라이드 전환 =====
+    let currentSlide = 0; // 0=준비, 1=연습, 2=기록
+
+    function goSlide(slideIndex) {
+      currentSlide = slideIndex;
+      const slides = document.querySelectorAll('.practice-slide');
+      slides.forEach((slide, i) => {
+        slide.style.transform = `translateX(${(i - slideIndex) * 100}%)`;
+      });
+    }
+
+    // ===== 박자 선택 =====
+    let metroBeats = 4;
+    function setBeats(n) {
+      metroBeats = n;
+      ['beat24','beat34','beat44'].forEach(id => {
+        document.getElementById(id).classList.remove('active-beat');
+      });
+      const map = {2:'beat24', 3:'beat34', 4:'beat44'};
+      document.getElementById(map[n]).classList.add('active-beat');
+      if (metroRunning) { stopMetronome(); startMetronome(); }
+    }
+
+    // ===== 메트로놈 =====
+    let metroCtx = null;
+    let metroInterval = null;
+    let metroBpm = 80;
+    let metroRunning = false;
+
+    function getAudioContext() {
+      if (!metroCtx) metroCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return metroCtx;
+    }
+
+    function playClick(isAccent) {
+      const ctx = getAudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = isAccent ? 1200 : 800;
+      gain.gain.setValueAtTime(isAccent ? 0.6 : 0.35, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.06);
+      // 시각 효과
+      const v = document.getElementById('metroVisual');
+      if (v) {
+        v.classList.add('active');
+        setTimeout(() => v.classList.remove('active'), 80);
+      }
+    }
+
+    function toggleMetronome() {
+      if (metroRunning) {
+        stopMetronome();
+      } else {
+        startMetronome();
+      }
+    }
+
+    function startMetronome() {
+      if (metroRunning) return;
+      // iOS AudioContext 재개
+      getAudioContext().resume();
+      metroRunning = true;
+      document.getElementById('metroToggleBtn').textContent = '■ 정지';
+      let beat = 0;
+      playClick(true);
+      metroInterval = setInterval(() => {
+        beat = (beat + 1) % metroBeats;
+        playClick(beat === 0);
+      }, (60 / metroBpm) * 1000);
+    }
+
+    function stopMetronome() {
+      metroRunning = false;
+      clearInterval(metroInterval);
+      metroInterval = null;
+      document.getElementById('metroToggleBtn').textContent = '▶ 시작';
+      const v = document.getElementById('metroVisual');
+      if (v) v.classList.remove('active');
+    }
+
+    function updateBpm(val) {
+      metroBpm = parseInt(val);
+      document.getElementById('bpmValue').textContent = metroBpm;
+      document.getElementById('bpmSlider').value = metroBpm;
+      if (metroRunning) { stopMetronome(); startMetronome(); }
+    }
+
+    function changeBpm(delta) {
+      const newBpm = Math.min(200, Math.max(40, metroBpm + delta));
+      updateBpm(newBpm);
+    }
+
+    function setPracticeType(type) {
+      practiceType = type;
+      const btnFull    = document.getElementById('typeBtnFull');
+      const btnPartial = document.getElementById('typeBtnPartial');
+      const label      = document.getElementById('countLabel');
+      btnFull.className    = 'practice-type-btn' + (type === 'full'    ? ' selected-full'    : '');
+      btnPartial.className = 'practice-type-btn' + (type === 'partial' ? ' selected-partial' : '');
+      label.textContent    = type === 'full' ? '완곡 성공 횟수' : '어려운 부분 반복 횟수';
+    }
+
+    function startPracticing() {
+      const songSelect = document.getElementById('songSelect');
+      const songName = songSelect.value;
+      if (!songName) { songSelect.classList.add('shake-error'); setTimeout(() => songSelect.classList.remove('shake-error'), 400); return showToast('🎵 연습할 곡을 먼저 선택해주세요!', 'error'); }
+      document.getElementById('practiceInfoSong').innerHTML = '🎵 ' + songName;
+      if (selectedGoals.length > 0) { document.getElementById('practiceInfoGoals').innerHTML = '🎯 목표: ' + selectedGoals.map(g => `<span class="goal-chip">${g}</span>`).join(''); }
+      else { document.getElementById('practiceInfoGoals').innerHTML = '🎯 목표: 자유 연습'; }
+      const banner = document.getElementById('masteryFeedbackBanner');
+      const level = masteryMap[songName] || 0;
+      banner.className = 'mastery-feedback-banner';
+      if (level === 1) { banner.classList.add('level-1'); banner.innerHTML = '⭐ <strong>연주 가능</strong>으로 체크한 곡이에요! 박자와 음정을 더 정확하게 표현해보세요 🎶'; }
+      else if (level === 2) { banner.classList.add('level-2'); banner.innerHTML = '🏆 <strong>마스터</strong>한 곡이에요! 꾸준한 연습이 실력을 유지시켜줘요 🌟'; }
+      document.getElementById('indexTabs').classList.add('locked');
+      document.getElementById('tab-practice').classList.add('tab-practicing');
+      setPracticeType('full');
+      goSlide(1);
+    }
+
+    function backToSetup() {
+      stopMetronome();
+      document.getElementById('indexTabs').classList.remove('locked');
+      document.getElementById('tab-practice').classList.remove('tab-practicing');
+      goSlide(0);
+    }
+
+    function showReflectStep() {
+      const songName = document.getElementById('songSelect').value;
+      if (practiceCount === 0) return alert('연습 횟수를 기록해주세요!');
+      const goalsText = selectedGoals.length > 0 ? ` [성취목표: ${selectedGoals.join(', ')}]` : '';
+      document.getElementById('summaryText').textContent = `🎹 ${songName}  ·  🔥 오늘 총 ${practiceCount}회${goalsText}`;
+      stopMetronome();
+      goSlide(2);
+    }
+
+    function backToPracticeStep() { goSlide(1); }
+
+    function loadMissions() { renderMissions(); }
+    function renderMissions() {
+      if (!currentStudent) return;
+      const missions = cache.missions || activeMissions || [];
+      activeMissions = missions;
+      const mEl = document.getElementById('activeMissionCount');
+      if (mEl) mEl.textContent = missions.length + '개';
+      displayMissions(missions);
+    }
+
+    // ===== 미션 연습 팝업 =====
+    let missionPopupId = null;
+    let missionPopupCount = 0;
+
+    function openMissionPracticePopup(missionId) {
+      const mission = activeMissions.find(m => m.missionId === missionId);
+      if (!mission) return;
+      missionPopupId = missionId;
+      missionPopupCount = 0;
+      document.getElementById('missionPracticeSong').textContent = '🎵 ' + (mission.songName || '');
+      document.getElementById('missionPopupCount').textContent = '0';
+      document.getElementById('missionPracticeOverlay').style.display = 'flex';
+    }
+    function closeMissionPracticePopup() {
+      document.getElementById('missionPracticeOverlay').style.display = 'none';
+      missionPopupId = null;
+    }
+    function changeMissionPopupCount(delta) {
+      missionPopupCount = Math.max(0, missionPopupCount + delta);
+      document.getElementById('missionPopupCount').textContent = missionPopupCount;
+    }
+    function confirmMissionPractice() {
+      if (missionPopupCount === 0) return showToast('⚠️ 연습 횟수를 입력해주세요!', 'info');
+      const mission = activeMissions.find(m => m.missionId === missionPopupId);
+      if (!mission) return;
+      const count = missionPopupCount;
+      const savedSong = mission.songName || '';
+      closeMissionPracticePopup();
+      callServer('savePracticeRecord', {
+        studentNumber: currentStudent.studentNumber,
+        studentName: currentStudent.studentName,
+        songName: mission.songName,
+        practiceCount: count,
+        goals: mission.goals || '미션 연습',
+        selfEval: 0,
+        memo: '',
+        missionId: mission.missionId,
+        practiceType: '완곡연습'
+      })
+        .then((res) => {
+          invalidateCache();
+          silentRefetch();
+          document.getElementById('saveSuccessDetail').textContent = `🎯 미션 · ${savedSong} ${count}회`;
+          document.getElementById('saveSuccessOverlay').style.display = 'flex';
+          if (res && res.demo) showToast('체험 모드라 이 기기에만 저장돼요. 선생님이 구글 시트를 연결하면 저장돼요.', 'info');
+        })
+        .catch((e) => { showToast('저장 오류: ' + (e && e.message ? e.message : e), 'error'); });
+    }
+
+    function displayMissions(missions) {
+      const container = document.getElementById('missionsList');
+      const noMissionsMsg = document.getElementById('noMissionsMessage');
+      if (!missions || missions.length === 0) { container.innerHTML = ''; noMissionsMsg.classList.remove('hidden'); return; }
+      noMissionsMsg.classList.add('hidden');
+      container.innerHTML = missions.map(mission => `
+      <div class="mission-card" id="mission-${mission.missionId}">
+        <div class="mission-header" style="margin-bottom:15px;">
+          <div>
+            <div class="mission-title" style="font-size:1.8rem;">${escapeHtml(mission.title || '미션')}</div>
+            ${mission.description ? `<div style="font-size:1.1rem;color:var(--dark);margin-top:8px;font-family:'Nanum Gothic',sans-serif;line-height:1.7;background:#FFE5B4;border-left:4px solid var(--main);border-radius:8px;padding:10px 14px;font-weight:700;">${escapeHtml(mission.description)}</div>` : ''}
+          </div>
+          <div class="mission-badge">진행중</div>
+        </div>
+        <div class="mission-info">
+          <div class="mission-info-item"><div class="mission-info-label">🎵 곡명</div><div class="mission-info-value">${escapeHtml(mission.songName || '')}</div></div>
+          <div class="mission-info-item"><div class="mission-info-label">🎯 목표</div><div class="mission-info-value">${escapeHtml(mission.goals || '열심히 연습하기')}</div></div>
+          ${mission.deadline ? `<div class="mission-info-item"><div class="mission-info-label">📅 마감일</div><div class="mission-info-value" style="color:var(--border);">${formatDeadline(mission.deadline)}</div></div>` : ''}
+        </div>
+        <div class="mission-progress-container">
+          <div class="mission-progress-bar" style="height:28px;"><div class="mission-progress-fill" style="width:0%; font-size:1.1rem;">0%</div></div>
+          <div class="mission-progress-text">미션 진행도를 확인 중...</div>
+        </div>
+        <div class="mission-actions" style="margin-top:20px;">
+          <button class="btn btn-primary" onclick="openMissionPracticePopup('${mission.missionId}')" style="padding:22px;">🚀 미션 연습 시작!</button>
+        </div>
+      </div>`).join('');
+      missions.forEach(mission => {
+        const progress = (cache.missionProgress && cache.missionProgress[mission.missionId]) || { percentage: 0, completedCount: 0, targetCount: 0, isCompleted: false };
+        const card = document.getElementById('mission-' + mission.missionId); if (!card) return;
+        const fill = card.querySelector('.mission-progress-fill');
+        const text = card.querySelector('.mission-progress-text');
+        const badge = card.querySelector('.mission-badge');
+        fill.style.width = (progress.percentage || 0) + '%'; fill.textContent = (progress.percentage || 0) + '%';
+        text.textContent = `${progress.completedCount || 0}회 / ${progress.targetCount || 0}회 연습 완료`;
+        if (progress.isCompleted) { card.classList.add('completed'); badge.classList.add('completed'); badge.textContent = '✅ 완료'; }
+      });
+    }
+
+    let isSaving = false;
+    async function savePractice() {
+      if (!currentStudent) return;
+      if (isSaving) return; // 중복 클릭 방지
+      const songName = document.getElementById('songSelect').value;
+      const selfEval = document.getElementById('selfEvaluation').value;
+      const memo = document.getElementById('practiceMemo').value;
+      const savedSong = songName;
+      const savedCount = practiceCount;
+      const savedType = practiceType;
+
+      // 저장 버튼 비활성화 + 텍스트 변경
+      isSaving = true;
+      const saveBtn = document.querySelector('#practiceStep3 .btn-success');
+      const origText = saveBtn ? saveBtn.textContent : '';
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '0.6'; saveBtn.textContent = '저장 중...'; }
+
+      try {
+        const saveResult = await callServer('savePracticeRecord', {
+          studentNumber: currentStudent.studentNumber,
+          studentName: currentStudent.studentName,
+          songName: songName,
+          practiceCount: practiceCount,
+          goals: selectedGoals,
+          selfEval: selfEval,
+          memo: memo,
+          missionId: currentMission ? currentMission.missionId : null,
+          practiceType: practiceType
+        });
+        if (!saveResult || !saveResult.success) {
+          isSaving = false;
+          if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = '1'; saveBtn.textContent = origText; }
+          return alert('저장에 실패했습니다. 다시 시도해주세요.');
+        }
+        const isDemoSave = !!(saveResult && saveResult.demo);
+        // 입력 초기화
+        practiceCount = 0; selectedGoals = []; currentMission = null;
+        updateCounterDisplay();
+        document.getElementById('songSelect').value = '';
+        document.getElementById('selfEvaluation').value = '';
+        document.getElementById('practiceMemo').value = '';
+        document.querySelectorAll('.goal-btn').forEach(btn => btn.classList.remove('selected'));
+        goSlide(0);
+        document.getElementById('indexTabs').classList.remove('locked');
+        document.getElementById('tab-practice').classList.remove('tab-practicing');
+        // 버튼 복구
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = '1'; saveBtn.textContent = origText; }
+        isSaving = false;
+        // 완료 팝업 표시
+        const typeLabel = savedType === 'partial' ? '부분 집중' : '완곡';
+        document.getElementById('saveSuccessDetail').textContent = `🎵 ${savedSong} · ${typeLabel} ${savedCount}회`;
+        document.getElementById('saveSuccessOverlay').style.display = 'flex';
+        if (isDemoSave) showToast('체험 모드라 이 기기에만 저장돼요. 선생님이 구글 시트를 연결하면 저장돼요.', 'info');
+        // 캐시 갱신 (백그라운드)
+        invalidateCache();
+        silentRefetch();
+      } catch (error) {
+        isSaving = false;
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = '1'; saveBtn.textContent = origText; }
+        alert('저장 중 오류: ' + (error && error.message ? error.message : error));
+      }
+    }
+
+    function closeSaveSuccess() {
+      document.getElementById('saveSuccessOverlay').style.display = 'none';
+    }
+
+    function loadTodayPractice() { renderTodayPractice(); }
+    function renderTodayPractice() {
+      if (!currentStudent) return;
+      const list = cache.todayRecords || [];
+      const container = document.getElementById('todayRecords');
+      const todayEl = document.getElementById('todaySessions');
+      if (todayEl) todayEl.textContent = list.length + '회';
+      if (!container) return;
+      if (list.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-state-icon">📭</span>아직 오늘 연습한 기록이 없습니다.</div>'; return; }
+      container.innerHTML = list.map(record => `
+      <div class="history-card"><div><div class="history-song">${escapeHtml(record.songName || '')}</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+          ${record.practiceType ? `<span style="font-size:1.05rem;padding:2px 10px;border-radius:20px;background:${record.practiceType==='부분연습'?'#BAE6FD':'#FFE5B4'};color:${record.practiceType==='부분연습'?'#1A5C8C':'#7A4010'};font-family:'Jua',sans-serif;">${record.practiceType==='부분연습'?'🔍 부분':'🎵 완곡'}</span>` : ''}
+          ${record.goals ? `<span style="font-size:1.05rem;color:var(--text-mid);">🎯 ${escapeHtml(String(record.goals))}</span>` : ''}
+        </div>
+        ${record.memo ? `<div style="font-size:1.00rem;color:var(--text-mid);margin-top:3px;">💬 ${escapeHtml(String(record.memo))}</div>` : ''}
+      </div>
+      <div><div class="history-count">${Number(record.practiceCount)||0}회</div>${record.selfEvaluation ? `<div style="text-align:center;font-size:0.90rem;color:#ffa500;">⭐${escapeHtml(String(record.selfEvaluation))}</div>` : ''}</div></div>`).join('');
+    }
+
+    function loadMasteryTab() { renderMasteryTab(); }
+    function renderMasteryTab() {
+      if (!currentStudent) return;
+      const container = document.getElementById('masteryList');
+      const songs = cache.songs || songList || [];
+      const mMap  = cache.masteryMap || masteryMap || {};
+      if (!songs.length) { container.innerHTML = '<div class="empty-state"><span class="empty-state-icon">🎵</span>악곡 목록이 없어요. 선생님께 문의해주세요.</div>'; return; }
+      container.innerHTML = songs.map(song => {
+        const name  = song.name;
+        const level = mMap[name] || 0;
+        return `
+        <div class="mastery-card" id="mastery-card-${encodeURIComponent(name)}">
+          <div class="mastery-song-info">
+            <div class="mastery-song-name">${escapeHtml(name)}</div>
+          </div>
+          <div class="mastery-btns">
+            <button class="mastery-btn ${level === 1 ? 'active-1' : ''}"
+              onclick="setMastery('${name.replace(/'/g, "\\'")}', ${level === 1 ? 0 : 1})">⭐ 연주 가능</button>
+            <button class="mastery-btn ${level === 2 ? 'active-2' : ''}"
+              onclick="setMastery('${name.replace(/'/g, "\\'")}', ${level === 2 ? 0 : 2})">🏆 마스터</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function setMastery(songName, level) {
+      if (!currentStudent) return;
+      // 낙관적 업데이트
+      masteryMap[songName] = level;
+      if (cache.masteryMap) cache.masteryMap[songName] = level;
+      renderMasteryTab();
+      callServer('setSongMastery', {
+        studentNumber: currentStudent.studentNumber,
+        studentName: currentStudent.studentName,
+        songName: songName,
+        level: level
+      })
+        .then(() => {
+          const levelText = level === 0 ? '체크가 해제되었습니다.' : level === 1 ? '⭐ 연주 가능으로 체크했어요!' : '🏆 마스터로 체크했어요!';
+          showToast(levelText, level === 0 ? 'info' : 'success');
+        })
+        .catch(() => { showToast('저장에 실패했습니다.', 'error'); });
+    }
+
+    let statsViewMode = 'date';
+
+    function switchStatsView(mode) {
+      statsViewMode = mode;
+      document.getElementById('viewBtnDate').className = 'practice-type-btn' + (mode === 'date' ? ' selected-full' : '');
+      document.getElementById('viewBtnSong').className = 'practice-type-btn' + (mode === 'song' ? ' selected-full' : '');
+      document.getElementById('statsDateView').style.display = mode === 'date' ? 'block' : 'none';
+      document.getElementById('statsSongView').style.display  = mode === 'song'  ? 'block' : 'none';
+    }
+
+    function loadStats() { renderStats(); }
+    function renderStats() {
+      if (!currentStudent) return;
+      const hs = cache.history   || [];
+      const ds = cache.dateStats || [];
+      const ss = cache.songStats || [];
+      const totalPractice = hs.reduce((sum, r) => sum + (Number(r.practiceCount) || 0), 0);
+
+      // ── 요약 카드 ──
+      document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card"><div class="stat-label">총 연습 횟수</div><div class="stat-number">${totalPractice}</div></div>
+        <div class="stat-card"><div class="stat-label">연습한 날</div><div class="stat-number">${ds.length}</div></div>
+        <div class="stat-card"><div class="stat-label">연습한 곡</div><div class="stat-number">${ss.length}</div></div>`;
+
+      // ── 날짜별 뷰 ──
+      const byDate = {};
+      hs.forEach(r => {
+        const d = r.date || '날짜 없음';
+        if (!byDate[d]) byDate[d] = [];
+        byDate[d].push(r);
+      });
+      const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+      const dayNames = ['일','월','화','수','목','금','토'];
+      document.getElementById('statsDateView').innerHTML = sortedDates.length > 0
+        ? sortedDates.map(date => {
+            const records = byDate[date];
+            const dayTotal = records.reduce((s, r) => s + (Number(r.practiceCount) || 0), 0);
+            const dt = new Date(date); const dayName = !isNaN(dt) ? dayNames[dt.getDay()] : '';
+            const dateLabel = date.replace(/-/g, '.') + (dayName ? ` (${dayName})` : '');
+            return `
+            <div style="margin-bottom:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--border);border-radius:12px 12px 0 0;">
+                <span style="font-family:'Jua',sans-serif;font-size:1.2rem;color:white;">${escapeHtml(dateLabel)}</span>
+                <span style="font-family:'Jua',sans-serif;font-size:1.1rem;color:rgba(255,255,255,0.9);">총 ${dayTotal}회</span>
+              </div>
+              <div style="border:2px solid var(--border);border-top:none;border-radius:0 0 12px 12px;overflow:hidden;">
+                ${records.map((r, i) => {
+                  const isMission = r.missionId && String(r.missionId).trim();
+                  const cardBg = isMission ? '#FFF4E6' : (i%2===0?'white':'#F0FDF9');
+                  return `
+                  <div style="padding:12px 16px;background:${cardBg};${isMission?'border-left:4px solid #FF9F1C;':''}">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="font-size:0.85rem;padding:3px 10px;border-radius:20px;font-family:'Jua',sans-serif;background:${isMission?'#FF9F1C':'#0096C7'};color:white;">${isMission?'🎯 미션':'📝 연습'}</span>
+                      <span style="font-family:'Jua',sans-serif;font-size:1.2rem;color:var(--dark);">${escapeHtml(r.songName||'')}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:10px;">
+                      <div style="font-family:'Jua',sans-serif;font-size:1.5rem;color:var(--border);">${Number(r.practiceCount)||0}회</div>
+                      ${r.selfEvaluation?`<div style="font-family:'Jua',sans-serif;font-size:1.2rem;color:#ffa500;">⭐ ${escapeHtml(String(r.selfEvaluation))}점</div>`:''}
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+                    ${r.practiceType?`<span style="font-size:1.00rem;color:${r.practiceType==='부분연습'?'#1A5C8C':'#7A4010'};font-family:'Jua',sans-serif;">${r.practiceType==='부분연습'?'🔍 부분집중':'🎵 완곡연습'}</span>`:''}
+                    ${r.goals?`<span style="font-size:1.00rem;color:var(--text-mid);">🎯 ${escapeHtml(String(r.goals))}</span>`:''}
+                    ${r.memo?`<span style="font-size:1.00rem;color:var(--text-mid);font-family:'Nanum Gothic',sans-serif;">💬 ${escapeHtml(String(r.memo))}</span>`:''}
+                  </div>
+                </div>`;}).join('')}
+              </div>
+            </div>`;
+          }).join('')
+        : '<div class="empty-state"><span class="empty-state-icon">📭</span>아직 연습 기록이 없습니다.</div>';
+
+      // ── 곡별 뷰 ──
+      const maxSong = ss.length > 0 ? Number(ss[0].totalPractice) : 1;
+      document.getElementById('statsSongView').innerHTML = ss.length > 0
+        ? ss.map(stat => {
+            const pct = Math.round((Number(stat.totalPractice) / maxSong) * 100);
+            return `
+            <div class="history-card" style="flex-direction:column;align-items:stretch;gap:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div class="history-song">${escapeHtml(stat.songName||'')}</div>
+                <div class="history-count" style="font-size:1.3rem;">${Number(stat.totalPractice)||0}회</div>
+              </div>
+              <div style="width:100%;height:10px;background:#F0FDF4;border-radius:10px;overflow:hidden;">
+                <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#34D399,#0077B6);border-radius:10px;transition:width 0.6s ease;"></div>
+              </div>
+              <div style="font-size:1.05rem;color:var(--text-light);font-family:'Nanum Gothic',sans-serif;">마지막 연습: ${escapeHtml(String(stat.lastPractice||'-'))}</div>
+            </div>`;
+          }).join('')
+        : '<div class="empty-state"><span class="empty-state-icon">🎼</span>아직 연습 기록이 없습니다.</div>';
+
+      switchStatsView(statsViewMode);
+    }
+
+    function loadBadges() { renderBadges(); }
+    function renderBadges() {
+      if (!currentStudent) return;
+      const badges = cache.badges || [];
+      const achievedContainer = document.getElementById('achievedBadges');
+      const lockedContainer   = document.getElementById('lockedBadges');
+
+      // ── 연습 횟수 레벨업 뱃지 ──
+      const got = badges.map(b => b.id);
+      const history = cache.history || [];
+      const total = history.reduce((s, r) => s + (Number(r.practiceCount) || 0), 0);
+
+      const levels = [
+        { key: 'none',    icon: '⬜', name: '시작 전',  desc: '아직 연습을 시작하지 않았어요',  min: 0,   next: 5,   cls: 'lv-none',    fillColor: '#D1D5DB', nextLabel: '첫 연습을 해보세요!' },
+        { key: 'bronze',  icon: '🥉', name: '브론즈',   desc: '5회 연습을 달성했어요!',          min: 5,   next: 20,  cls: 'lv-bronze',  fillColor: '#FB923C', nextLabel: '실버까지 {n}회 남았어요!' },
+        { key: 'silver',  icon: '🥈', name: '실버',     desc: '누적 20회 연습 달성!',            min: 20,  next: 50,  cls: 'lv-silver',  fillColor: '#94A3B8', nextLabel: '골드까지 {n}회 남았어요!' },
+        { key: 'gold',    icon: '🥇', name: '골드',     desc: '누적 50회 연습 달성!',            min: 50,  next: 100, cls: 'lv-gold',    fillColor: '#FFBA5C', nextLabel: '다이아까지 {n}회 남았어요!' },
+        { key: 'diamond', icon: '💎', name: '다이아',   desc: '누적 100회 연습 달성!',           min: 100, next: 200, cls: 'lv-diamond', fillColor: '#60A5FA', nextLabel: '레전드까지 {n}회 남았어요!' },
+        { key: 'legend',  icon: '👑', name: '레전드',   desc: '누적 200회 연습 달성! 최고예요!', min: 200, next: null, cls: 'lv-legend',  fillColor: '#A78BFA', nextLabel: '최고 레벨 달성! 👑' }
+      ];
+      let curLevel = levels[0];
+      for (let i = levels.length - 1; i >= 0; i--) {
+        if (total >= levels[i].min) { curLevel = levels[i]; break; }
+      }
+      const nextLevel = curLevel.next !== null ? levels.find(l => l.min === curLevel.next) : null;
+      const pct = nextLevel
+        ? Math.min(100, Math.round(((total - curLevel.min) / (curLevel.next - curLevel.min)) * 100))
+        : 100;
+      const nextText = nextLevel
+        ? curLevel.nextLabel.replace('{n}', curLevel.next - total)
+        : curLevel.nextLabel;
+
+      document.getElementById('levelBadge').innerHTML = `
+        <div class="level-badge-card ${curLevel.cls}" style="box-shadow: 0 4px 0 ${curLevel.fillColor};">
+          <div class="level-badge-icon">${curLevel.icon}</div>
+          <div class="level-badge-info">
+            <div class="level-badge-name">${curLevel.name} <span style="font-size:1rem;opacity:0.7;">누적 ${total}회</span></div>
+            <div class="level-badge-desc">${curLevel.desc}</div>
+            ${nextLevel ? `
+            <div class="level-progress">
+              <div class="level-progress-bar">
+                <div class="level-progress-fill" style="width:${pct}%;background:${curLevel.fillColor};"></div>
+              </div>
+              <div class="level-badge-next">${nextText}</div>
+            </div>` : `<div class="level-badge-next">🎊 ${nextText}</div>`}
+          </div>
+        </div>`;
+
+      // ── 일반 뱃지 (연습횟수 제외) ──
+      const practiceBadgeIds = ['first_practice','practice_10','practice_30','practice_50','practice_100'];
+      const allBadges = [
+        // ── 연습 횟수 ──
+        { id: 'first_practice',     name: '첫 걸음',           icon: '🎵', description: '첫 번째 연습을 완료했어요!' },
+        { id: 'practice_5',         name: '브론즈 달성',        icon: '🥉', description: '5회 연습 달성!' },
+        { id: 'practice_20',        name: '실버 달성',          icon: '🥈', description: '누적 20회 연습 달성!' },
+        { id: 'practice_50',        name: '골드 달성',          icon: '🥇', description: '누적 50회 연습 달성!' },
+        { id: 'practice_100',       name: '다이아 달성',        icon: '💎', description: '누적 100회 연습 달성!' },
+        { id: 'practice_200',       name: '레전드 달성',        icon: '👑', description: '누적 200회 연습 달성!' },
+        // ── 연속 연습 ──
+        { id: 'streak_3',           name: '꾸준함의 씨앗',      icon: '🔥',   description: '3일 연속 연습 성공!' },
+        { id: 'streak_7',           name: '불타는 열정',        icon: '🔥🔥', description: '7일 연속 연습 성공!' },
+        // ── 곡 다양성 ──
+        { id: 'songs_3',            name: '다양한 도전',        icon: '🎹',   description: '3가지 곡 연습 완료!' },
+        { id: 'songs_5',            name: '레퍼토리왕',         icon: '🎼',   description: '5가지 곡 연습 완료!' },
+        // ── 성찰/목표 ──
+        { id: 'reflection_5',       name: '성찰하는 연주자',    icon: '📝',   description: '자기평가 5번 작성!' },
+        { id: 'goal_10',            name: '목표 달인',          icon: '🎯',   description: '목표 설정 10번 달성!' },
+        // ── 미션 ──
+        { id: 'mission_complete_1', name: '미션 완수자',        icon: '🎖️',  description: '첫 번째 미션 완료!' },
+        { id: 'mission_complete_3', name: '미션 마스터',        icon: '🏅',   description: '미션 3개 완료!' }
+      ];
+      const bEl = document.getElementById('myBadgeCount');
+      const totalGot = got.filter(id => !practiceBadgeIds.includes(id)).length + (total > 0 ? 1 : 0);
+      if (bEl) bEl.textContent = totalGot + '개';
+      const achieved = allBadges.filter(b => got.includes(b.id));
+      const locked   = allBadges.filter(b => !got.includes(b.id));
+      // 아코디언 제목에 개수 표시
+      const achTitle = document.getElementById('achievedAccTitle');
+      const lockTitle = document.getElementById('lockedAccTitle');
+      if (achTitle)  achTitle.textContent  = `✨ 획득한 뱃지 (${achieved.length})`;
+      if (lockTitle) lockTitle.textContent = `🔒 도전 중인 뱃지 (${locked.length})`;
+      achievedContainer.innerHTML = achieved.length > 0
+        ? achieved.map(b => `<div class="badge achieved"><div class="badge-icon">${b.icon}</div><div class="badge-name">${escapeHtml(b.name)}</div><div class="badge-desc">${escapeHtml(b.description)}</div></div>`).join('')
+        : '<p style="text-align:center;color:var(--text-light);grid-column:1/-1;">아직 획득한 뱃지가 없습니다. 연습을 시작해보세요!</p>';
+      lockedContainer.innerHTML = locked.length > 0
+        ? locked.map(b => `<div class="badge locked"><div class="badge-icon">${b.icon}</div><div class="badge-name">${escapeHtml(b.name)}</div><div class="badge-desc">${escapeHtml(b.description)}</div></div>`).join('')
+        : '<p style="text-align:center;color:var(--text-light);grid-column:1/-1;">모든 뱃지를 획득했습니다! 🎉</p>';
+    }
+
+    function toggleAccordion(id) {
+      const body = document.getElementById(id);
+      const arrow = document.getElementById(id + 'Arrow') || document.querySelector(`#${id}`).closest('.accordion').querySelector('.accordion-arrow');
+      if (!body) return;
+      const isOpen = body.classList.contains('open');
+      body.classList.toggle('open');
+      // 화살표 id 매핑
+      const arrowMap = { achievedAcc: 'achievedAccArrow', lockedAcc: 'lockedAccArrow' };
+      const ar = document.getElementById(arrowMap[id]);
+      if (ar) ar.classList.toggle('collapsed', isOpen);
+    }
+
+    function showBadgeInfoPopup() {
+      document.getElementById('badgeInfoOverlay').style.display = 'flex';
+    }
+    function closeBadgeInfoPopup() {
+      document.getElementById('badgeInfoOverlay').style.display = 'none';
+    }
+
+    function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+    function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+
+    function escapeHtml(str) {
+      const s = String((str === null || str === undefined) ? '' : str);
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function formatDeadline(value) {
+      if (!value) return '';
+      let s = String(value).trim();
+      if (/^\d{8}$/.test(s)) {
+        s = s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8);
+      }
+      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return s;
+      const date = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+      const days = ['일', '월', '화', '수', '목', '금', '토'];
+      return `${m[1]}.${m[2]}.${m[3]}(${days[date.getDay()]})`;
+    }
+
+    // ===== 뱃지 축하 팝업 =====
+    const ALL_BADGE_DEFS = [
+      { id: 'first_practice',     name: '첫 연습',           icon: '🎵', description: '첫 번째 연습을 완료했어요!' },
+      { id: 'practice_10',        name: '열정 연습생',        icon: '🎼', description: '누적 10회 연습 달성!' },
+      { id: 'practice_30',        name: '노력의 열매',        icon: '🌟', description: '누적 30회 연습 달성!' },
+      { id: 'practice_50',        name: '마스터의 길',        icon: '👑', description: '누적 50회 연습 달성!' },
+      { id: 'practice_100',       name: '리코더 점프 마스터', icon: '🏆', description: '누적 100회 연습 달성!' },
+      { id: 'streak_3',           name: '꾸준함의 씨앗',      icon: '🔥', description: '3일 연속 연습 성공!' },
+      { id: 'streak_7',           name: '불타는 열정',        icon: '🔥🔥', description: '7일 연속 연습 성공!' },
+      { id: 'songs_3',            name: '다양한 도전',        icon: '🎹', description: '3가지 곡 연습 완료!' },
+      { id: 'songs_5',            name: '레퍼토리왕',         icon: '🎼', description: '5가지 곡 연습 완료!' },
+      { id: 'reflection_5',       name: '성찰하는 연주자',    icon: '📝', description: '자기평가 5번 작성!' },
+      { id: 'goal_10',            name: '목표 달인',          icon: '🎯', description: '목표 설정 10번 달성!' },
+      { id: 'mission_complete_1', name: '미션 완수자',        icon: '🎖️', description: '첫 번째 미션 완료!' },
+      { id: 'mission_complete_3', name: '미션 마스터',        icon: '🏅', description: '미션 3개 완료!' }
+    ];
+
+    let badgeQueue = [];
+
+    function showBadgePopupQueue(ids) {
+      badgeQueue = [...ids];
+      showNextBadgePopup();
+    }
+
+    function showNextBadgePopup() {
+      if (badgeQueue.length === 0) return;
+      const id = badgeQueue.shift();
+      const def = ALL_BADGE_DEFS.find(b => b.id === id) || { name: id, icon: '🏅', description: '새 뱃지를 획득했어요!' };
+      document.getElementById('badgePopupIcon').textContent = def.icon;
+      document.getElementById('badgePopupName').textContent = def.name;
+      document.getElementById('badgePopupDesc').textContent = def.description;
+      // 팝업 표시
+      const overlay = document.getElementById('badgePopupOverlay');
+      overlay.style.display = 'flex';
+      // 팝업 박스 애니메이션 재실행
+      const box = document.getElementById('badgePopupBox');
+      box.style.animation = 'none';
+      requestAnimationFrame(() => { box.style.animation = 'badgePop 0.5s cubic-bezier(0.175,0.885,0.32,1.4) both'; });
+      // 색종이 효과
+      spawnConfetti();
+    }
+
+    function closeBadgePopup() {
+      document.getElementById('badgePopupOverlay').style.display = 'none';
+      document.getElementById('badgeConfetti').innerHTML = '';
+      if (badgeQueue.length > 0) {
+        setTimeout(showNextBadgePopup, 300);
+      } else {
+        showToast('🎉 연습 기록이 저장되었습니다!', 'success');
+      }
+    }
+
+    function spawnConfetti() {
+      const container = document.getElementById('badgeConfetti');
+      container.innerHTML = '';
+      const colors = ['#FF9F1C','#34D399','#60A5FA','#F87171','#A78BFA','#FB923C'];
+      const shapes = ['●', '■', '▲', '★'];
+      for (let i = 0; i < 28; i++) {
+        const el = document.createElement('div');
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const shape = shapes[Math.floor(Math.random() * shapes.length)];
+        const left = Math.random() * 100;
+        const delay = Math.random() * 0.8;
+        const duration = 1.2 + Math.random() * 1.0;
+        const size = 10 + Math.random() * 10;
+        el.textContent = shape;
+        el.style.cssText = `position:absolute;left:${left}%;top:-10px;font-size:${size}px;color:${color};animation:confettiFall ${duration}s ${delay}s ease-in forwards;`;
+        container.appendChild(el);
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      let icon = '🔔'; if (type === 'error') icon = '⚠️'; if (type === 'success') icon = '✅'; if (type === 'info') icon = '💡';
+      toast.innerHTML = `<span class="toast-icon">${icon}</span> ${message}`;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+  </script>
+
+<script>
+/* 체험 모드 안내 배너 (전 앱 일관) */
+(function () {
+  function isDemo() {
+    try {
+      if (/[#&]c=/.test(location.hash || '')) return false;
+      if (typeof google !== 'undefined' && google.script && google.script.run) return false;
+      if (localStorage.getItem('recorderjump:exec')) return false;
+      return true;
+    } catch (e) { return true; }
+  }
+  function show() {
+    if (document.getElementById('__demoBar')) return;
+    if (!isDemo()) return;
+    var bar = document.createElement('div');
+    bar.id = '__demoBar';
+    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2147483000;background:#1f2937;color:#fff;font-size:13px;line-height:1.45;padding:9px 38px calc(9px + env(safe-area-inset-bottom)) 14px;text-align:center;font-family:sans-serif;box-shadow:0 -2px 10px rgba(0,0,0,0.25);';
+    bar.textContent = '체험 모드예요 · 활동 기록은 이 기기에만 저장돼요(이어하기 가능). 선생님이 구글 시트를 연결하면 시트에 저장됩니다.';
+    var x = document.createElement('button');
+    x.type = 'button'; x.setAttribute('aria-label', '닫기'); x.textContent = '\u2715';
+    x.style.cssText = 'position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:0;color:#fff;font-size:16px;line-height:1;cursor:pointer;padding:6px;';
+    x.onclick = function () { try { bar.remove(); } catch (e) { bar.style.display = 'none'; } };
+    bar.appendChild(x);
+    document.body.appendChild(bar);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', show);
+  } else { show(); }
+})();
+</script>
+</body>
+</html>
