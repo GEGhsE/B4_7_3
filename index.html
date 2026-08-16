@@ -1157,7 +1157,7 @@
     
     
     
-    /* ===== 선생님 메뉴 (연결 설정) ===== */
+    /* ===== 선생님 설정 (연결 설정) ===== */
     .teacher-menu-wrap { margin-top: 14px; text-align: center; }
     .teacher-menu-toggle {
       background: transparent; border: 2px solid var(--border);
@@ -1326,9 +1326,9 @@
               <button id="loginActionBtn" class="btn-login-pill" onclick="handleLoginBtn()">로그인하여 시작하기 👤</button>
             </div>
 
-            <!-- 선생님 메뉴 (연결 설정) -->
+            <!-- 선생님 설정 (연결 설정) -->
             <div id="teacherMenuWrap" class="teacher-menu-wrap">
-              <button id="teacherMenuToggle" class="teacher-menu-toggle" onclick="toggleTeacherMenu()">⚙️ 선생님 메뉴</button>
+              <button id="teacherMenuToggle" class="teacher-menu-toggle" onclick="toggleTeacherMenu()">⚙️ 선생님 설정</button>
               <div id="teacherMenuPanel" class="teacher-menu-panel hidden">
                 <div class="tm-row">
                   <label class="tm-label" for="execInput">우리 반 시트 주소 (웹 앱 URL)</label>
@@ -1344,7 +1344,7 @@
                     <input type="text" id="studentLinkInput" class="tm-input" readonly>
                     <button class="tm-btn tm-copy" onclick="copyStudentLink()">복사</button>
                   </div>
-                  <div class="tm-hint">이 주소를 학생에게 공유하면, 학생 화면에는 선생님 메뉴가 보이지 않습니다.</div>
+                  <div class="tm-hint">이 주소를 학생에게 공유하면, 학생 화면에는 선생님 설정가 보이지 않습니다.</div>
                 </div>
                 <div id="tmStatus" class="tm-status"></div>
               </div>
@@ -1875,7 +1875,7 @@
         });
     }
 
-    // ===== 선생님 메뉴 (연결 설정) =====
+    // ===== 선생님 설정 (연결 설정) =====
     // 학생용 링크로 들어왔으면 메뉴 버튼 자체를 DOM에서 제거한다.
     function applyTeacherMenuVisibility() {
       const wrap = document.getElementById('teacherMenuWrap');
